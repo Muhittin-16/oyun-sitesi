@@ -599,8 +599,37 @@ canvas{
 /* =========================
    OYUNCU SİSTEMİ
 ========================= */
+let stats = {
+ best: 0,
+ played: 0,
+ coins: 0,
+ xp: 0
+};
 
-let stats=JSON.parse(localStorage.getItem("oyunDunyasiStats")||'{"best":0,"played":0,"coins":0,"xp":0}');
+try {
+ const saved = localStorage.getItem("oyunDunyasiStats");
+
+ if(saved){
+  const parsed = JSON.parse(saved);
+
+  stats = {
+   best: Number(parsed.best) || 0,
+   played: Number(parsed.played) || 0,
+   coins: Number(parsed.coins) || 0,
+   xp: Number(parsed.xp) || 0
+  };
+ }
+} catch(e) {
+ stats = {
+  best: 0,
+  played: 0,
+  coins: 0,
+  xp: 0
+ };
+
+ localStorage.removeItem("oyunDunyasiStats");
+}
+
 let cleanupFns=[];
 
 function saveStats(){

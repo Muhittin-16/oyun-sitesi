@@ -1,132 +1,680 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Oyun Dünyası - Ücretsiz online mobil ve bilgisayar oyunları">
+<title>🎮 Oyun Dünyası - Ücretsiz Online Oyunlar</title>
 
-    <title>Oyun Dünyası - Ücretsiz Online Oyunlar</title>
-<link rel="stylesheet" href="style.css">
-    <meta name="description" content="Oyun Dünyası - Ücretsiz, eğlenceli ve mobil uyumlu online oyunlar.">
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;
+ font-family:Arial,sans-serif;
+ background:#0b1020;
+ color:#fff;
+}
+header{
+ background:#151d38;
+ padding:18px 20px;
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:15px;
+ position:sticky;
+ top:0;
+ z-index:10;
+ border-bottom:1px solid #293457;
+}
+.logo{font-size:24px;font-weight:bold}
+nav a{
+ color:#fff;
+ text-decoration:none;
+ margin-left:15px;
+ font-weight:bold;
+}
+.hero{
+ text-align:center;
+ padding:55px 20px 35px;
+ background:linear-gradient(135deg,#121b39,#24134b);
+}
+.hero h1{font-size:40px;margin:0 0 12px}
+.hero p{color:#cbd3ed;font-size:18px}
+.search{
+ width:min(600px,90%);
+ padding:15px 18px;
+ border:0;
+ border-radius:30px;
+ font-size:16px;
+ outline:none;
+ margin-top:15px;
+}
+.container{max-width:1200px;margin:auto;padding:25px 18px}
+h2{text-align:center;margin:25px 0}
+.categories{
+ display:flex;
+ flex-wrap:wrap;
+ justify-content:center;
+ gap:10px;
+ margin-bottom:30px;
+}
+.cat{
+ border:1px solid #35436e;
+ background:#171f3c;
+ color:#fff;
+ padding:10px 16px;
+ border-radius:20px;
+ cursor:pointer;
+}
+.cat:hover{background:#26335c}
+.games{
+ display:grid;
+ grid-template-columns:repeat(3,1fr);
+ gap:18px;
+}
+.card{
+ background:#151d38;
+ border:1px solid #293457;
+ border-radius:16px;
+ padding:20px;
+ text-align:center;
+ transition:.2s;
+}
+.card:hover{transform:translateY(-5px);border-color:#697cff}
+.icon{font-size:48px}
+.card h3{margin:12px 0 8px}
+.card p{color:#aeb8d8;min-height:38px}
+.play{
+ width:100%;
+ border:0;
+ padding:13px;
+ border-radius:10px;
+ background:#5865f2;
+ color:white;
+ font-weight:bold;
+ font-size:16px;
+ cursor:pointer;
+}
+.play:hover{background:#707bff}
+footer{
+ text-align:center;
+ padding:35px 15px;
+ margin-top:30px;
+ background:#080c18;
+ color:#8994b7;
+}
+.hidden{display:none!important}
+
+/* OYUN EKRANI */
+#gameScreen{
+ position:fixed;
+ inset:0;
+ background:#080c18;
+ z-index:100;
+ overflow:auto;
+ padding:20px;
+}
+.gameBox{
+ max-width:850px;
+ margin:20px auto;
+ background:#121a32;
+ border:1px solid #303d66;
+ border-radius:18px;
+ padding:20px;
+ min-height:500px;
+}
+.gameTop{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ gap:10px;
+ margin-bottom:15px;
+}
+.back{
+ background:#293457;
+ color:white;
+ border:0;
+ border-radius:9px;
+ padding:10px 15px;
+ cursor:pointer;
+}
+.gameTitle{text-align:center;margin:0}
+.gameArea{text-align:center;padding:15px}
+.bigBtn{
+ border:0;
+ background:#5865f2;
+ color:white;
+ padding:16px 25px;
+ border-radius:12px;
+ font-size:18px;
+ cursor:pointer;
+ margin:8px;
+}
+.score{
+ font-size:22px;
+ font-weight:bold;
+ margin:12px;
+}
+.message{
+ font-size:20px;
+ min-height:30px;
+ margin:15px;
+}
+.grid{
+ display:grid;
+ gap:8px;
+ max-width:500px;
+ margin:20px auto;
+}
+.memoryGrid{grid-template-columns:repeat(4,1fr)}
+.memCard{
+ aspect-ratio:1;
+ border:0;
+ border-radius:10px;
+ background:#293457;
+ color:white;
+ font-size:30px;
+ cursor:pointer;
+}
+.word{
+ font-size:35px;
+ letter-spacing:8px;
+ margin:25px;
+}
+input.gameInput{
+ padding:13px;
+ border-radius:9px;
+ border:1px solid #46547f;
+ background:#080c18;
+ color:white;
+ font-size:18px;
+ text-align:center;
+ max-width:300px;
+ width:90%;
+}
+canvas{
+ max-width:100%;
+ background:#050812;
+ border:1px solid #303d66;
+ border-radius:10px;
+ touch-action:none;
+}
+.controls{
+ display:flex;
+ justify-content:center;
+ flex-wrap:wrap;
+ gap:8px;
+ margin-top:12px;
+}
+.controlBtn{
+ width:55px;
+ height:45px;
+ border:0;
+ border-radius:9px;
+ background:#293457;
+ color:white;
+ font-size:20px;
+}
+
+@media(max-width:800px){
+ .games{grid-template-columns:repeat(2,1fr)}
+ .hero h1{font-size:32px}
+ header{flex-direction:column}
+ nav a{margin:0 7px}
+}
+@media(max-width:520px){
+ .games{grid-template-columns:1fr}
+ .gameBox{margin:0;padding:12px}
+ .hero{padding-top:35px}
+}
+</style>
 </head>
 
 <body>
 
-    <header>
-        <h1>🎮 Oyun Dünyası</h1>
+<header>
+ <div class="logo">🎮 Oyun Dünyası</div>
+ <nav>
+  <a href="#">Ana Sayfa</a>
+  <a href="#oyunlar">Oyunlar</a>
+  <a href="#kategoriler">Kategoriler</a>
+ </nav>
+</header>
 
-        <nav>
-            <a href="#">Ana Sayfa</a>
-            <a href="#oyunlar">Oyunlar</a>
-            <a href="#kategoriler">Kategoriler</a>
-        </nav>
-    </header>
+<section class="hero">
+ <h1>🎮 Ücretsiz Online Oyunlar</h1>
+ <p>Telefon, tablet ve bilgisayardan hemen oyna!</p>
+ <input id="search" class="search" placeholder="🔎 Oyun ara..." oninput="searchGames()">
+</section>
 
-    <main>
+<div class="container">
 
-        <section>
-            <h2>🎮 Ücretsiz Online Oyunlar</h2>
-            <p>Telefon, tablet ve bilgisayardan hemen oyna!</p>
+<h2 id="kategoriler">📂 Kategoriler</h2>
 
-            <input type="text" placeholder="🔎 Oyun ara...">
-        </section>
+<div class="categories">
+ <button class="cat" onclick="filterGames('all')">Tümü</button>
+ <button class="cat" onclick="filterGames('zeka')">🧠 Zeka</button>
+ <button class="cat" onclick="filterGames('yaris')">🏎️ Yarış</button>
+ <button class="cat" onclick="filterGames('spor')">⚽ Spor</button>
+ <button class="cat" onclick="filterGames('beceri')">🎯 Beceri</button>
+ <button class="cat" onclick="filterGames('arcade')">🕹️ Arcade</button>
+</div>
 
-        <section id="kategoriler">
-            <h2>📂 Kategoriler</h2>
+<h2 id="oyunlar">🔥 Oyunlar</h2>
 
-            <button>🧠 Zeka</button>
-            <button>🏎️ Yarış</button>
-            <button>⚽ Spor</button>
-            <button>🎯 Beceri</button>
-            <button>🃏 Kart</button>
-        </section>
+<div class="games" id="games">
 
-        <section id="oyunlar">
+<div class="card" data-cat="zeka" data-name="zeka bulmacası">
+ <div class="icon">🧠</div><h3>Zeka Bulmacası</h3>
+ <p>Doğru cevabı bul!</p><button class="play" onclick="openGame(1)">OYNA</button>
+</div>
 
-            <h2>🔥 Popüler Oyunlar</h2>
+<div class="card" data-cat="yaris" data-name="hızlı yarış">
+ <div class="icon">🏎️</div><h3>Hızlı Yarış</h3>
+ <p>Engellerden kaç ve ilerle!</p><button class="play" onclick="openGame(2)">OYNA</button>
+</div>
 
-            <div>
+<div class="card" data-cat="spor" data-name="penaltı şampiyonu">
+ <div class="icon">⚽</div><h3>Penaltı Şampiyonu</h3>
+ <p>Kaleciyi geç ve gol at!</p><button class="play" onclick="openGame(3)">OYNA</button>
+</div>
 
-                <article>
-                    <h3>🧠 Zeka Bulmacası</h3>
-                    <p>Beynini çalıştır ve bulmacaları çöz!</p>
-                    <button>▶️ Oyna</button>
-                </article>
+<div class="card" data-cat="beceri" data-name="hedefi vur">
+ <div class="icon">🎯</div><h3>Hedefi Vur</h3>
+ <p>Hedeflere hızlıca tıkla!</p><button class="play" onclick="openGame(4)">OYNA</button>
+</div>
 
-                <article>
-                    <h3>🏎️ Hızlı Yarış</h3>
-                    <p>Rakiplerini geç ve birinci ol!</p>
-                    <button>▶️ Oyna</button>
-                </article>
+<div class="card" data-cat="zeka" data-name="kart eşleştirme">
+ <div class="icon">🃏</div><h3>Kart Eşleştirme</h3>
+ <p>Aynı kartları bul!</p><button class="play" onclick="openGame(5)">OYNA</button>
+</div>
 
-                <article>
-                    <h3>⚽ Penaltı Şampiyonu</h3>
-                    <p>Penaltını kullan ve golünü at!</p>
-                    <button>▶️ Oyna</button>
-                </article>
+<div class="card" data-cat="arcade" data-name="yılan oyunu">
+ <div class="icon">🐍</div><h3>Yılan Oyunu</h3>
+ <p>Elmaları ye, büyü!</p><button class="play" onclick="openGame(6)">OYNA</button>
+</div>
 
-                <article>
-                    <h3>🎯 Hedefi Vur</h3>
-                    <p>Hedeflere nişan al ve puan kazan!</p>
-                    <button>▶️ Oyna</button>
-                </article>
+<div class="card" data-cat="arcade" data-name="tuğla kırıcı">
+ <div class="icon">🧱</div><h3>Tuğla Kırıcı</h3>
+ <p>Topla bütün tuğlaları kır!</p><button class="play" onclick="openGame(7)">OYNA</button>
+</div>
 
-                <article>
-                    <h3>🃏 Kart Eşleştirme</h3>
-                    <p>Aynı kartları bul ve hafızanı test et!</p>
-                    <button>▶️ Oyna</button>
-                </article>
+<div class="card" data-cat="zeka" data-name="kelime oyunu">
+ <div class="icon">🧩</div><h3>Kelime Oyunu</h3>
+ <p>Gizli kelimeyi tahmin et!</p><button class="play" onclick="openGame(8)">OYNA</button>
+</div>
 
-                <article>
-                    <h3>🐍 Yılan Oyunu</h3>
-                    <p>Yılanını büyüt ve en yüksek skoru yap!</p>
-                    <button>▶️ Oyna</button>
-                </article>
+<div class="card" data-cat="arcade" data-name="uzay macerası">
+ <div class="icon">🚀</div><h3>Uzay Macerası</h3>
+ <p>Düşmanları vur!</p><button class="play" onclick="openGame(9)">OYNA</button>
+</div>
 
-                <article>
-                    <h3>🧱 Tuğla Kırıcı</h3>
-                    <p>Topu kontrol et ve bütün tuğlaları kır!</p>
-                    <button>▶️ Oyna</button>
-                </article>
+<div class="card" data-cat="beceri" data-name="meyve yakala">
+ <div class="icon">🍎</div><h3>Meyve Yakala</h3>
+ <p>Meyveleri sepete düşür!</p><button class="play" onclick="openGame(10)">OYNA</button>
+</div>
 
-                <article>
-                    <h3>🧩 Kelime Oyunu</h3>
-                    <p>Harfleri birleştir ve kelimeleri bul!</p>
-                    <button>▶️ Oyna</button>
-                </article>
+<div class="card" data-cat="spor" data-name="basket atışı">
+ <div class="icon">🏀</div><h3>Basket Atışı</h3>
+ <p>En yüksek skoru yap!</p><button class="play" onclick="openGame(11)">OYNA</button>
+</div>
 
-                <article>
-                    <h3>🚀 Uzay Macerası</h3>
-                    <p>Uzayda engellerden kaç ve ilerle!</p>
-                    <button>▶️ Oyna</button>
-                </article>
+<div class="card" data-cat="zeka" data-name="mücevher patlat">
+ <div class="icon">💎</div><h3>Mücevher Patlat</h3>
+ <p>Aynı taşları eşleştir!</p><button class="play" onclick="openGame(12)">OYNA</button>
+</div>
 
-                <article>
-                    <h3>🍎 Meyve Yakala</h3>
-                    <p>Düşen meyveleri yakala ve puan kazan!</p>
-                    <button>▶️ Oyna</button>
-                </article>
+</div>
+</div>
 
-                <article>
-                    <h3>🏀 Basket Atışı</h3>
-                    <p>Topu potaya gönder ve sayı yap!</p>
-                    <button>▶️ Oyna</button>
-                </article>
+<footer>
+ 🎮 Oyun Dünyası © 2026<br>
+ Ücretsiz online oyun platformu
+</footer>
 
-                <article>
-                    <h3>💎 Mücevher Patlat</h3>
-                    <p>Aynı mücevherleri birleştir ve patlat!</p>
-                    <button>▶️ Oyna</button>
-                </article>
+<!-- OYUN PENCERESİ -->
+<div id="gameScreen" class="hidden">
+ <div class="gameBox">
+  <div class="gameTop">
+   <button class="back" onclick="closeGame()">← Geri</button>
+   <h2 id="gameTitle" class="gameTitle">Oyun</h2>
+   <div></div>
+  </div>
+  <div id="gameArea" class="gameArea"></div>
+ </div>
+</div>
 
-            </div>
+<script>
+const screen=document.getElementById("gameScreen");
+const area=document.getElementById("gameArea");
+const title=document.getElementById("gameTitle");
 
-        </section>
+function openGame(n){
+ screen.classList.remove("hidden");
+ window.scrollTo(0,0);
+ const games={
+ 1:["🧠 Zeka Bulmacası",game1],
+ 2:["🏎️ Hızlı Yarış",game2],
+ 3:["⚽ Penaltı Şampiyonu",game3],
+ 4:["🎯 Hedefi Vur",game4],
+ 5:["🃏 Kart Eşleştirme",game5],
+ 6:["🐍 Yılan Oyunu",game6],
+ 7:["🧱 Tuğla Kırıcı",game7],
+ 8:["🧩 Kelime Oyunu",game8],
+ 9:["🚀 Uzay Macerası",game9],
+ 10:["🍎 Meyve Yakala",game10],
+ 11:["🏀 Basket Atışı",game11],
+ 12:["💎 Mücevher Patlat",game12]
+ };
+ title.textContent=games[n][0];
+ games[n][1]();
+}
 
-    </main>
+function closeGame(){
+ screen.classList.add("hidden");
+ area.innerHTML="";
+}
 
-    <footer>
-        <p>© 2026 Oyun Dünyası - Tüm hakları saklıdır.</p>
-    </footer>
+function button(text,fn){
+ let b=document.createElement("button");
+ b.className="bigBtn";
+ b.textContent=text;
+ b.onclick=fn;
+ return b;
+}
+
+/* 1 Zeka */
+function game1(){
+ let qs=[
+ ["5 + 7 = ?",["10","12","14"],1],
+ ["Bir haftada kaç gün vardır?",["5","7","9"],1],
+ ["3 x 4 = ?",["7","12","14"],1],
+ ["Türkiye'nin başkenti?",["İstanbul","Ankara","İzmir"],1],
+ ["10 - 6 = ?",["3","4","5"],1]
+ ];
+ let i=0,score=0;
+ area.innerHTML='<div class="score">Skor: 0</div><div class="message" id="q"></div><div id="answers"></div>';
+ function show(){
+  if(i>=qs.length){
+   area.innerHTML='<div class="message">🎉 Tebrikler!<br>Skorun: '+score+'/'+qs.length+'</div>';
+   area.appendChild(button("Tekrar Oyna",game1));return;
+  }
+  document.getElementById("q").textContent=qs[i][0];
+  let a=document.getElementById("answers");a.innerHTML="";
+  qs[i][1].forEach((x,k)=>{
+   let b=button(x,()=>{
+    if(k===qs[i][2])score++;
+    i++;show();
+   });a.appendChild(b);
+  });
+ }
+ show();
+}
+
+/* 2 Yarış */
+function game2(){
+ area.innerHTML='<div class="score">🏁 Şerit değiştirmek için butona bas!</div><div id="race" style="font-size:60px;height:250px;padding-top:80px">🚗</div><div class="score" id="rs">0</div>';
+ let s=0,alive=true;
+ let btn=button("➡️ HIZLAN",()=>{
+  if(!alive)return;
+  s++;
+  document.getElementById("rs").textContent=s;
+  if(Math.random()<.12){
+   alive=false;
+   document.getElementById("race").textContent="💥";
+   setTimeout(()=>area.innerHTML='<div class="message">🏁 Yarış bitti!<br>Skor: '+s+'</div>',400);
+  }else{
+   document.getElementById("race").textContent=Math.random()>.5?"🚗":"🏎️";
+  }
+ });
+ area.appendChild(btn);
+}
+
+/* 3 Penaltı */
+function game3(){
+ let score=0,shots=0;
+ area.innerHTML='<div class="message">Kalecinin olmadığı köşeye tıkla!</div><div id="goal" style="font-size:90px;cursor:pointer">🥅</div><div class="score" id="ps">0 / 5</div>';
+ document.getElementById("goal").onclick=()=>{
+  if(shots>=5)return;
+  shots++;
+  let goal=Math.random()>.3;
+  if(goal)score++;
+  document.getElementById("goal").textContent=goal?"⚽🥅":"🧤";
+  document.getElementById("ps").textContent=score+" / "+shots;
+  if(shots===5)setTimeout(()=>alert("Maç bitti! "+score+" gol attın."),100);
+ };
+}
+
+/* 4 Hedef */
+function game4(){
+ let score=0,time=20,active=true;
+ area.innerHTML='<div class="score">Skor: <span id="ts">0</span> | Süre: <span id="tm">20</span></div><div id="target" style="font-size:65px;cursor:pointer;position:relative;height:300px">🎯</div>';
+ let t=document.getElementById("target");
+ function move(){
+  t.style.position="absolute";
+  t.style.left=(10+Math.random()*70)+"%";
+  t.style.top=(120+Math.random()*220)+"px";
+ }
+ t.onclick=()=>{
+  if(!active)return;
+  score++;
+  document.getElementById("ts").textContent=score;
+  move();
+ };
+ let timer=setInterval(()=>{
+  time--;
+  document.getElementById("tm").textContent=time;
+  if(time<=0){
+   active=false;clearInterval(timer);
+   area.innerHTML='<div class="message">🎯 Süre bitti!<br>Skorun: '+score+'</div>';
+   area.appendChild(button("Tekrar Oyna",game4));
+  }
+ },1000);
+}
+
+/* 5 Hafıza */
+function game5(){
+ let vals=["🍎","🍌","🍇","🍒","🍉","🥝","🍋","🥥"];
+ vals=[...vals,...vals].sort(()=>Math.random()-.5);
+ let open=[],done=0;
+ area.innerHTML='<div class="message">Aynı kartları bul!</div><div class="grid memoryGrid" id="mg"></div>';
+ let g=document.getElementById("mg");
+ vals.forEach((v,i)=>{
+  let b=document.createElement("button");b.className="memCard";b.textContent="❓";
+  b.onclick=()=>{
+   if(open.length>=2||b.dataset.done)return;
+   b.textContent=v;open.push({b,v});
+   if(open.length===2){
+    if(open[0].v===open[1].v){
+     open.forEach(x=>x.b.dataset.done="1");done+=2;open=[];
+     if(done===vals.length)area.innerHTML='<div class="message">🎉 Tüm kartları eşleştirdin!</div>';
+    }else setTimeout(()=>{open.forEach(x=>x.b.textContent="❓");open=[]},600);
+   }
+  };
+  g.appendChild(b);
+ });
+}
+
+/* 6 Yılan */
+function game6(){
+ area.innerHTML='<div class="score">🐍 Yön tuşları veya butonlarla hareket et</div><canvas id="snake" width="360" height="360"></canvas><div class="controls"><button class="controlBtn" onclick="snakeDir(0,-1)">⬆️</button><button class="controlBtn" onclick="snakeDir(-1,0)">⬅️</button><button class="controlBtn" onclick="snakeDir(1,0)">➡️</button><button class="controlBtn" onclick="snakeDir(0,1)">⬇️</button></div>';
+ let c=document.getElementById("snake"),x=c.getContext("2d"),cell=18;
+ window.snake=[{x:10,y:10}],window.snakeD={x:1,y:0},food={x:5,y:5},run=true,sc=0;
+ function draw(){
+  if(!run)return;
+  x.fillStyle="#050812";x.fillRect(0,0,360,360);
+  x.fillText("🍎",food.x*cell,food.y*cell+16);
+  x.font="16px Arial";
+  snake.forEach((p,i)=>{x.fillText(i?"🟢":"🐍",p.x*cell,p.y*cell+16)});
+  let h={x:snake[0].x+snakeD.x,y:snake[0].y+snakeD.y};
+  if(h.x<0||h.y<0||h.x>=20||h.y>=20||snake.some(p=>p.x===h.x&&p.y===h.y)){
+   run=false;setTimeout(()=>alert("Oyun bitti! Skor: "+sc),50);return;
+  }
+  snake.unshift(h);
+  if(h.x===food.x&&h.y===food.y){
+   sc++;food={x:Math.floor(Math.random()*20),y:Math.floor(Math.random()*20)}
+  }else snake.pop();
+ }
+ window.snakeDir=(a,b)=>{if(a!==-snakeD.x||b!==-snakeD.y)snakeD={x:a,y:b}};
+ document.onkeydown=e=>{
+  if(e.key==="ArrowUp")snakeDir(0,-1);
+  if(e.key==="ArrowDown")snakeDir(0,1);
+  if(e.key==="ArrowLeft")snakeDir(-1,0);
+  if(e.key==="ArrowRight")snakeDir(1,0);
+ };
+ setInterval(draw,130);
+}
+
+/* 7 Tuğla */
+function game7(){
+ area.innerHTML='<canvas id="brick" width="600" height="400"></canvas><div class="controls"><button class="bigBtn" id="brstart">BAŞLA</button></div>';
+ let c=document.getElementById("brick"),x=c.getContext("2d");
+ let ball,paddle,bricks,run=false;
+ function reset(){
+  ball={x:300,y:330,dx:4,dy:-4,r:8};
+  paddle={x:250,w:100};
+  bricks=[];
+  for(let r=0;r<4;r++)for(let q=0;q<8;q++)bricks.push({x:q*75+4,y:r*28+20,w:68,h:20,on:true});
+ }
+ reset();
+ function draw(){
+  x.clearRect(0,0,600,400);
+  x.fillStyle="#5865f2";bricks.forEach(b=>{if(b.on)x.fillRect(b.x,b.y,b.w,b.h)});
+  x.fillStyle="#fff";x.fillRect(paddle.x,375,paddle.w,10);
+  x.beginPath();x.arc(ball.x,ball.y,ball.r,0,7);x.fill();
+  if(!run)return;
+  ball.x+=ball.dx;ball.y+=ball.dy;
+  if(ball.x<8||ball.x>592)ball.dx*=-1;
+  if(ball.y<8)ball.dy*=-1;
+  if(ball.y>365&&ball.x>paddle.x&&ball.x<paddle.x+paddle.w)ball.dy=-Math.abs(ball.dy);
+  bricks.forEach(b=>{
+   if(b.on&&ball.x>b.x&&ball.x<b.x+b.w&&ball.y>b.y&&ball.y<b.y+b.h){b.on=false;ball.dy*=-1}
+  });
+  if(ball.y>400){run=false;alert("Oyun bitti!");}
+  if(bricks.every(b=>!b.on)){run=false;alert("🎉 Tebrikler, kazandın!")}
+  requestAnimationFrame(draw);
+ }
+ c.onmousemove=e=>{let r=c.getBoundingClientRect();paddle.x=(e.clientX-r.left)*(600/r.width)-50};
+ c.ontouchmove=e=>{let r=c.getBoundingClientRect();paddle.x=(e.touches[0].clientX-r.left)*(600/r.width)-50};
+ document.getElementById("brstart").onclick=()=>{reset();run=true;draw()};
+}
+
+/* 8 Kelime */
+function game8(){
+ let words=["ELMA","ARABA","BİLGİSAYAR","TELEFON","OYUN","KİTAP","KALEM","DENİZ"];
+ let word=words[Math.floor(Math.random()*words.length)],masked=[...word].map(()=>"_"),tries=7;
+ area.innerHTML='<div class="score">Kalan hak: <span id="tries">7</span></div><div class="word" id="word">'+masked.join(" ")+'</div><input class="gameInput" id="letter" maxlength="1" placeholder="Harf"><br><button class="bigBtn" onclick="guessLetter()">TAHMİN ET</button>';
+ window.guessLetter=()=>{
+  let inp=document.getElementById("letter"),l=inp.value.toUpperCase();inp.value="";
+  if(!l)return;
+  let found=false;
+  [...word].forEach((c,i)=>{if(c===l){masked[i]=l;found=true}});
+  if(!found)tries--;
+  document.getElementById("tries").textContent=tries;
+  document.getElementById("word").textContent=masked.join(" ");
+  if(masked.join("")===word){area.innerHTML='<div class="message">🎉 Doğru! Kelime: '+word+'</div>';area.appendChild(button("Yeni Kelime",game8))}
+  else if(tries<=0){area.innerHTML='<div class="message">😔 Bitti! Kelime: '+word+'</div>';area.appendChild(button("Tekrar Oyna",game8))}
+ };
+}
+
+/* 9 Uzay */
+function game9(){
+ area.innerHTML='<div class="score">🚀 Düşmanları vur!</div><canvas id="space" width="500" height="500"></canvas><div class="controls"><button class="bigBtn" onclick="shoot()">🔫 ATEŞ</button></div>';
+ let c=document.getElementById("space"),x=c.getContext("2d");
+ window.ship={x:230},window.enemies=[],window.bullets=[],window.spaceRun=true,window.spaceScore=0;
+ for(let i=0;i<6;i++)enemies.push({x:40+i*75,y:50});
+ window.shoot=()=>bullets.push({x:ship.x+20,y:440});
+ c.onmousemove=e=>{let r=c.getBoundingClientRect();ship.x=(e.clientX-r.left)*(500/r.width)-20};
+ function loop(){
+  if(!spaceRun)return;
+  x.fillStyle="#050812";x.fillRect(0,0,500,500);
+  x.font="35px Arial";x.fillText("🚀",ship.x,480);
+  bullets.forEach(b=>{b.y-=7;x.fillText("🔸",b.x,b.y)});
+  enemies.forEach(en=>x.fillText("👾",en.x,en.y));
+  bullets.forEach(b=>enemies.forEach(en=>{
+   if(Math.abs(b.x-en.x)<30&&Math.abs(b.y-en.y)<30){en.y=600;spaceScore++}
+  }));
+  enemies.forEach(en=>{if(en.y<550)en.y+=.3});
+  if(enemies.every(e=>e.y>500)){spaceRun=false;alert("🎉 Uzayı temizledin! Skor: "+spaceScore)}
+  requestAnimationFrame(loop);
+ }
+ loop();
+}
+
+/* 10 Meyve */
+function game10(){
+ area.innerHTML='<div class="score">🍎 Meyveleri yakala!</div><canvas id="fruit" width="500" height="450"></canvas><div class="controls"><button class="controlBtn" onclick="moveBasket(-1)">⬅️</button><button class="controlBtn" onclick="moveBasket(1)">➡️</button></div>';
+ let c=document.getElementById("fruit"),x=c.getContext("2d");
+ window.basket={x:220},window.fruits=[],window.fruitScore=0,window.fruitRun=true;
+ window.moveBasket=d=>basket.x+=d*30;
+ function loop(){
+  if(!fruitRun)return;
+  x.clearRect(0,0,500,450);
+  x.font="35px Arial";x.fillText("🧺",basket.x,425);
+  if(Math.random()<.03)fruits.push({x:Math.random()*470,y:0});
+  fruits.forEach(f=>{
+   f.y+=4;x.fillText("🍎",f.x,f.y);
+   if(f.y>395&&f.x>basket.x-10&&f.x<basket.x+50){fruitScore++;f.y=500}
+  });
+  fruits=fruits.filter(f=>f.y<460);
+  requestAnimationFrame(loop);
+ }
+ loop();
+}
+
+/* 11 Basket */
+function game11(){
+ let score=0,shots=0;
+ area.innerHTML='<div class="score">🏀 Skor: <span id="bs">0</span> / 10 atış</div><div style="font-size:120px">🏀</div><div class="message">Güçlü atış için doğru zamanda bas!</div>';
+ let b=button("🏀 ATIŞ YAP",()=>{
+  if(shots>=10)return;
+  shots++;
+  if(Math.random()>.35){score++;document.getElementById("bs").textContent=score}
+  if(shots===10){setTimeout(()=>alert("Maç bitti! "+score+"/10 basket."),100)}
+ });
+ area.appendChild(b);
+}
+
+/* 12 Mücevher */
+function game12(){
+ let icons=["💎","🔷","🟣","🟢"];
+ let board=[];
+ for(let i=0;i<25;i++)board.push(icons[Math.floor(Math.random()*icons.length)]);
+ area.innerHTML='<div class="score">💎 Aynı taşlardan 3 veya daha fazlasına tıkla!</div><div class="grid" id="gem" style="grid-template-columns:repeat(5,1fr);max-width:450px"></div>';
+ let g=document.getElementById("gem");
+ board.forEach((v,i)=>{
+  let b=document.createElement("button");b.className="memCard";b.textContent=v;
+  b.onclick=()=>{
+   let row=Math.floor(i/5),col=i%5;
+   let group=[i];
+   [[row-1,col],[row+1,col],[row,col-1],[row,col+1]].forEach(p=>{
+    let j=p[0]*5+p[1];
+    if(p[0]>=0&&p[0]<5&&p[1]>=0&&p[1]<5&&board[j]===v)group.push(j);
+   });
+   if(group.length>=3){
+    group.forEach(j=>{board[j]="💥";g.children[j].textContent="💥"});
+    setTimeout(()=>{
+     group.forEach(j=>{board[j]=icons[Math.floor(Math.random()*icons.length)];g.children[j].textContent=board[j]});
+    },400);
+   }
+  };
+  g.appendChild(b);
+ });
+}
+
+function searchGames(){
+ let q=document.getElementById("search").value.toLowerCase();
+ document.querySelectorAll(".card").forEach(c=>{
+  c.classList.toggle("hidden",!c.dataset.name.includes(q));
+ });
+}
+
+function filterGames(cat){
+ document.querySelectorAll(".card").forEach(c=>{
+  c.classList.toggle("hidden",cat!=="all"&&c.dataset.cat!==cat);
+ });
+}
+</script>
 
 </body>
 </html>

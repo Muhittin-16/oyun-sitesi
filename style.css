@@ -1,0 +1,166 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #0f172a;
+    color: #ffffff;
+    line-height: 1.6;
+}
+
+header {
+    background: #1e293b;
+    padding: 20px;
+    text-align: center;
+    border-bottom: 2px solid #334155;
+}
+
+header h1 {
+    font-size: 32px;
+    margin-bottom: 12px;
+}
+
+nav a {
+    color: #ffffff;
+    text-decoration: none;
+    margin: 0 12px;
+    font-weight: bold;
+}
+
+nav a:hover {
+    color: #38bdf8;
+}
+
+main {
+    max-width: 1200px;
+    margin: auto;
+    padding: 30px 20px;
+}
+
+section {
+    margin-bottom: 40px;
+}
+
+section:first-child {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+section:first-child h2 {
+    font-size: 36px;
+    margin-bottom: 10px;
+}
+
+section:first-child p {
+    color: #cbd5e1;
+    margin-bottom: 25px;
+}
+
+input {
+    width: 100%;
+    max-width: 500px;
+    padding: 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+}
+
+#kategoriler {
+    text-align: center;
+}
+
+#kategoriler button {
+    background: #334155;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    margin: 6px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+#kategoriler button:hover {
+    background: #475569;
+}
+
+#oyunlar h2 {
+    margin-bottom: 20px;
+}
+
+#oyunlar > div {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+article {
+    background: #1e293b;
+    padding: 22px;
+    border-radius: 14px;
+    border: 1px solid #334155;
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+article:hover {
+    transform: translateY(-5px);
+    border-color: #38bdf8;
+}
+
+article h3 {
+    margin-bottom: 10px;
+}
+
+article p {
+    color: #cbd5e1;
+    margin-bottom: 18px;
+}
+
+article button {
+    background: #0ea5e9;
+    color: white;
+    border: none;
+    padding: 11px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+article button:hover {
+    background: #0284c7;
+}
+
+footer {
+    text-align: center;
+    padding: 30px 20px;
+    background: #1e293b;
+    color: #94a3b8;
+    margin-top: 30px;
+}
+
+@media (max-width: 800px) {
+    #oyunlar > div {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 500px) {
+    header h1 {
+        font-size: 26px;
+    }
+
+    nav a {
+        display: inline-block;
+        margin: 5px;
+    }
+
+    section:first-child h2 {
+        font-size: 28px;
+    }
+
+    #oyunlar > div {
+        grid-template-columns: 1fr;
+    }
+}

@@ -1678,113 +1678,361 @@ function game11(){
 ========================= */
 
 function game12(){
- const icons=["💎","🔷","🟣","🟢","🔴"];
- const size=6;
+  const icons=["💎","🔷","🟣","🟢","🔴","🟡"];
+ const size=7;
 
  let board=[];
  let score=0;
  let moves=0;
+ let selected=null;
+ let gameOver=false;
 
- for(let i=0;i<size*size;i++){
-  board.push(icons[Math.floor(Math.random()*icons.length)]);
+ function createBoard(){
+
+  do{
+   board=[];
+
+   for(let i=0;i<size*size;i++){
+    board.push(
+     icons[Math.floor(Math.random()*icons.length)]
+    );
+   }
+
+  }while(findMatches().length>0);
  }
 
- area.innerHTML=
- '<div class="score">💎 Skor: <span id="gemScore">0</span> • Hamle: <span id="gemMoves">0</span>/20</div>'+
- '<div class="grid" id="gem" style="grid-template-columns:repeat(6,1fr);max-width:500px"></div>';
-
- let g=document.getElementById("gem");
-
- function render(){
-  g.innerHTML="";
-
-  board.forEach((v,i)=>{
-   let b=document.createElement("button");
-   b.className="memCard";
-   b.textContent=v;
-
-   b.onclick=()=>clickGem(i);
-
-   g.appendChild(b);
-  });
+ function index(row,col){
+  return row*size+col;
  }
 
  function neighbors(i){
+
   let r=Math.floor(i/size);
   let c=i%size;
-  let arr=[];
+  let result=[];
 
-  if(r>0)arr.push(i-size);
-  if(r<size-1)arr.push(i+size);
-  if(c>0)arr.push(i-1);
-  if(c<size-1)arr.push(i+1);
+  if(r>0) result.push(index(r-1,c));
+  if(r<size-1) result.push(index(r+1,c));
+  if(c>0) result.push(index(r,c-1));
+  if(c<size-1) result.push(index(r,c+1));
 
-  return arr;
+  return result;
  }
 
- function group(start){
-  let value=board[start];
-  let found=[start];
-  let queue=[start];
+ function areNeighbors(a,b){
+  return neighbors(a).includes(b);
+ }
 
-  while(queue.length){
-   let current=queue.shift();
+ function findMatches(){
 
-   neighbors(current).forEach(n=>{
-    if(
-     board[n]===value&&
-     !found.includes(n)
+  let matched=new Set();
+
+  for(let r=0;r<size;r++){
+
+   let start=0;
+
+   while(start<size){
+
+    let value=board[index(r,start)];
+    let end=start+1;
+
+    while(
+     end<size &&
+     board[index(r,end)]===value
     ){
-     found.push(n);
-     queue.push(n);
+     end++;
     }
-   });
+
+    if(value && end-start>=3){
+
+     for(let c=start;c<end;c++){
+      matched.add(index(r,c));
+     }
+
+    }
+
+    start=end;
+   }
   }
 
-  return found;
+  for(let c=0;c<size;c++){
+
+   let start=0;
+
+   while(start<size){
+
+    let value=board[index(start,c)];
+    let end=start+1;
+
+    while(
+     end<size &&
+     board[index(end,c)]===value
+    ){
+     end++;
+    }
+
+    if(value && end-start>=3){
+
+     for(let r=start;r<end;r++){
+      matched.add(index(r,c));
+     }
+
+    }
+
+    start=end;
+   }
+  }
+
+  return [...matched];
  }
 
- function clickGem(i){
-  if(moves>=20)return;
+ function render(){
 
-  let groupTiles=group(i);
+  grid.innerHTML="";
 
-  if(groupTiles.length<3){
-   toast("💡 En az 3 aynı taş olmalı.");
+  board.forEach((gem,i)=>{
+
+   let b=document.createElement("button");
+
+   b.className="memCard";
+   b.textContent=gem;
+
+   if(selected===i){
+
+    b.style.transform="scale(1.12)";
+    b.style.boxShadow="0 0 20px #00d4ff";
+    b.style.borderColor="#00d4ff";
+
+   }
+
+   b.onclick=()=>selectGem(i);
+
+   grid.appendChild(b);
+
+  });
+ }
+
+ function dropGems(){
+
+  for(let c=0;c<size;c++){
+
+   let values=[];
+
+   for(let r=size-1;r>=0;r--){
+
+    let v=board[index(r,c)];
+
+    if(v){
+     values.push(v);
+    }
+   }
+
+   for(let r=size-1;r>=0;r--){
+
+    let i=index(r,c);
+
+    if(values.length){
+     board[i]=values.shift();
+    }else{
+     board[i]=icons[
+      Math.floor(Math.random()*icons.length)
+     ];
+    }
+
+   }
+  }
+ }
+
+ function removeMatches(){
+
+  let total=0;
+  let combo=0;
+
+  while(true){
+
+   let matched=findMatches();
+
+   if(!matched.length) break;
+
+   combo++;
+
+   matched.forEach(i=>{
+    board[i]=null;
+   });
+
+   let points=matched.length*50;
+
+   if(matched.length>=5){
+    points+=100;
+   }
+
+   if(matched.length>=7){
+    points+=200;
+   }
+
+   if(combo>1){
+    points+=combo*50;
+   }
+
+   score+=points;
+   total+=matched.length;
+
+   dropGems();
+  }
+
+  return {
+   total:total,
+   combo:combo
+  };
+ }
+
+ function selectGem(i){
+
+  if(gameOver) return;
+
+  if(selected===null){
+
+   selected=i;
+
+   document.getElementById("gemMessage").textContent=
+    "👉 Şimdi yanındaki taşı seç.";
+
+   render();
+
+   return;
+  }
+
+  if(selected===i){
+
+   selected=null;
+   render();
+
+   return;
+  }
+
+  if(!areNeighbors(selected,i)){
+
+   document.getElementById("gemMessage").textContent=
+    "⚠️ Sadece yanındaki taşı seçebilirsin.";
+
+   selected=null;
+   render();
+
+   return;
+  }
+
+  let first=selected;
+
+  let temp=board[first];
+
+  board[first]=board[i];
+  board[i]=temp;
+
+  let matches=findMatches();
+
+  if(matches.length===0){
+
+   temp=board[first];
+   board[first]=board[i];
+   board[i]=temp;
+
+   document.getElementById("gemMessage").textContent=
+    "❌ Bu hamle eşleşme oluşturmadı.";
+
+   selected=null;
+   render();
+
+   return;
+  }
+
+  moves++;
+  selected=null;
+
+  let result=removeMatches();
+
+  document.getElementById("gemScore").textContent=score;
+  document.getElementById("gemMoves").textContent=moves;
+
+  if(result.combo>=2){
+
+   document.getElementById("gemMessage").textContent=
+    "🔥 KOMBO x"+result.combo+"!";
+
+  }else{
+
+   document.getElementById("gemMessage").textContent=
+    "💥 "+result.total+" mücevher patladı!";
+
+  }
+
+  render();
+
+  if(moves>=30){
+
+   gameOver=true;
+
+   setTimeout(()=>{
+
+    finish(
+     score,
+     score>=800,
+     score>=1500
+    );
+
+   },400);
+  }
+ }
+
+ area.innerHTML=
+  '<div class="score">'+
+  '💎 Skor: <span id="gemScore">0</span>'+
+  ' • Hamle: <span id="gemMoves">0</span>/30'+
+  '</div>'+
+
+  '<div class="message" id="gemMessage">'+
+  'Bir mücevher seç, sonra yanındaki mücevheri seç.'+
+  '</div>'+
+
+  '<div class="grid" id="gemGrid" '+
+  'style="grid-template-columns:repeat(7,1fr);max-width:520px">'+
+  '</div>'+
+
+  '<button class="bigBtn" id="newGemGame">'+
+  '🔄 Yeni Oyun'+
+  '</button>';
+
+ let grid=document.getElementById("gemGrid");
+
+ document.getElementById("newGemGame").onclick=()=>{
+
+  score=0;
+  moves=0;
+  selected=null;
+  gameOver=false;
+
+  createBoard();
+
+  document.getElementById("gemScore").textContent="0";
+  document.getElementById("gemMoves").textContent="0";
+
+  document.getElementById("gemMessage").textContent=
+   "Bir mücevher seç, sonra yanındaki mücevheri seç.";
+
+  render();
+ };
+
+ createBoard();
+ render();
+}
+
+
    return;
   }
 
   moves++;
   score+=groupTiles.length*25;
 
-  groupTiles.forEach(j=>{
-   board[j]=null;
-  });
-
-  for(let col=0;col<size;col++){
-   let values=[];
-
-   for(let row=size-1;row>=0;row--){
-    let index=row*size+col;
-
-    if(board[index]!==null){
-     values.push(board[index]);
-    }
-   }
-
-   for(let row=size-1;row>=0;row--){
-    let index=row*size+col;
-
-    if(values.length){
-     board[index]=values.shift();
-    }else{
-     board[index]=icons[Math.floor(Math.random()*icons.length)];
-    }
-   }
-  }
-
-  document.getElementById("gemScore").textContent=score;
-  document.getElementById("gemMoves").textContent=moves;
+  
 
   render();
 

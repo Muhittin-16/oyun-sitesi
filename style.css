@@ -41,7 +41,7 @@ button {
     align-items: center;
     justify-content: space-between;
     gap: 20px;
-    background: rgba(10, 15, 35, 0.95);
+    background: rgba(10, 15, 35, 0.96);
     border-bottom: 1px solid #26304d;
     position: sticky;
     top: 0;
@@ -55,7 +55,6 @@ button {
     gap: 12px;
     font-size: 25px;
     font-weight: 800;
-    color: #ffffff;
 }
 
 .logo i {
@@ -86,6 +85,7 @@ button {
 
 .coin-badge strong {
     color: #ffffff;
+    font-size: 17px;
 }
 
 .ad-btn {
@@ -132,7 +132,11 @@ button {
     border: 1px solid #29365a;
     border-radius: 24px;
     background:
-        linear-gradient(135deg, rgba(30, 41, 90, 0.95), rgba(15, 23, 42, 0.96));
+        linear-gradient(
+            135deg,
+            rgba(30, 41, 90, 0.95),
+            rgba(15, 23, 42, 0.96)
+        );
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
 }
 
@@ -184,12 +188,9 @@ button {
     font-size: 17px;
 }
 
-.hero-buttons {
+.hero-btn {
     position: relative;
     z-index: 1;
-}
-
-.hero-btn {
     display: inline-flex;
     align-items: center;
     gap: 8px;
@@ -321,6 +322,11 @@ button {
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
 }
 
+
+/* =========================
+   GAME IMAGE
+========================= */
+
 .game-img {
     height: 175px;
     position: relative;
@@ -330,14 +336,28 @@ button {
     overflow: hidden;
 }
 
+.game-img::after {
+    content: "";
+    position: absolute;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    right: -60px;
+    bottom: -100px;
+}
+
 .game-img > i {
+    position: relative;
+    z-index: 2;
     font-size: 58px;
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(255, 255, 255, 0.92);
     text-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
 }
 
 .game-badge {
     position: absolute;
+    z-index: 3;
     top: 12px;
     right: 12px;
     padding: 5px 9px;
@@ -348,44 +368,9 @@ button {
     font-weight: 900;
 }
 
-.game-info {
-    padding: 18px;
-}
-
-.game-info h3 {
-    font-size: 21px;
-    margin-bottom: 7px;
-}
-
-.game-info p {
-    min-height: 52px;
-    color: #94a3b8;
-    font-size: 14px;
-    margin-bottom: 15px;
-}
-
-.play-btn {
-    width: 100%;
-    border: 0;
-    border-radius: 10px;
-    padding: 11px 15px;
-    background: #0ea5e9;
-    color: #ffffff;
-    font-weight: 800;
-    transition: 0.2s ease;
-}
-
-.play-btn:hover {
-    background: #0284c7;
-}
-
-.play-btn i {
-    margin-right: 5px;
-}
-
 
 /* =========================
-   GAME BACKGROUNDS
+   GAME COLORS
 ========================= */
 
 .okey-bg {
@@ -436,9 +421,61 @@ button {
     background: linear-gradient(135deg, #0369a1, #082f49);
 }
 
+.memory-bg {
+    background: linear-gradient(135deg, #0f766e, #134e4a);
+}
+
+.snake-bg {
+    background: linear-gradient(135deg, #166534, #052e16);
+}
+
+.basket-bg {
+    background: linear-gradient(135deg, #c2410c, #7c2d12);
+}
+
 
 /* =========================
-   MODAL
+   GAME INFO
+========================= */
+
+.game-info {
+    padding: 18px;
+}
+
+.game-info h3 {
+    font-size: 21px;
+    margin-bottom: 7px;
+}
+
+.game-info p {
+    min-height: 52px;
+    color: #94a3b8;
+    font-size: 14px;
+    margin-bottom: 15px;
+}
+
+.play-btn {
+    width: 100%;
+    border: 0;
+    border-radius: 10px;
+    padding: 11px 15px;
+    background: #0ea5e9;
+    color: #ffffff;
+    font-weight: 800;
+    transition: 0.2s ease;
+}
+
+.play-btn:hover {
+    background: #0284c7;
+}
+
+.play-btn i {
+    margin-right: 5px;
+}
+
+
+/* =========================
+   GAME MODAL
 ========================= */
 
 .modal {
@@ -449,8 +486,8 @@ button {
     align-items: center;
     justify-content: center;
     padding: 20px;
-    background: rgba(0, 0, 0, 0.82);
-    backdrop-filter: blur(6px);
+    background: rgba(0, 0, 0, 0.84);
+    backdrop-filter: blur(7px);
 }
 
 .modal.hidden {
@@ -459,7 +496,7 @@ button {
 
 .modal-content {
     width: min(1100px, 100%);
-    height: min(720px, 90vh);
+    height: min(720px, 92vh);
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -470,7 +507,7 @@ button {
 }
 
 .modal-header {
-    min-height: 58px;
+    min-height: 68px;
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -484,6 +521,15 @@ button {
     font-size: 20px;
 }
 
+.modal-category {
+    display: block;
+    color: #38bdf8;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
 .close-modal {
     width: 40px;
     height: 40px;
@@ -492,23 +538,80 @@ button {
     background: #1e293b;
     color: #ffffff;
     font-size: 20px;
+    flex-shrink: 0;
 }
 
 .close-modal:hover {
     background: #dc2626;
 }
 
-.game-frame-container {
+
+/* =========================
+   GAME AREA
+========================= */
+
+.game-area {
     flex: 1;
     min-height: 0;
+    overflow: auto;
+    background: #070b18;
 }
 
-#game-iframe {
-    width: 100%;
-    height: 100%;
-    display: block;
+
+/* =========================
+   MESSAGE MODAL
+========================= */
+
+.message-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.75);
+}
+
+.message-modal.hidden {
+    display: none;
+}
+
+.message-box {
+    width: min(430px, 100%);
+    padding: 30px;
+    text-align: center;
+    border: 1px solid #334155;
+    border-radius: 20px;
+    background: #10182d;
+    box-shadow: 0 25px 70px rgba(0, 0, 0, 0.55);
+}
+
+.message-icon {
+    font-size: 48px;
+    margin-bottom: 10px;
+}
+
+.message-box h2 {
+    margin-bottom: 10px;
+}
+
+.message-box p {
+    color: #94a3b8;
+    margin-bottom: 22px;
+}
+
+.message-close {
     border: 0;
-    background: #070b18;
+    border-radius: 10px;
+    padding: 11px 25px;
+    background: #0ea5e9;
+    color: #ffffff;
+    font-weight: 800;
+}
+
+.message-close:hover {
+    background: #0284c7;
 }
 
 
@@ -574,7 +677,6 @@ footer {
     .games-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
     }
-
 }
 
 
@@ -658,6 +760,9 @@ footer {
         border-radius: 12px;
     }
 
+    .message-box {
+        padding: 25px 20px;
+    }
 }
 
 
@@ -701,5 +806,4 @@ footer {
     .game-count {
         align-self: flex-start;
     }
-
 }

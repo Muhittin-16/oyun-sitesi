@@ -1,19 +1,18 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <meta name="description" content="OynaKazan - Ücretsiz online oyunlar. 101 Okey, Tavla, Dama, Batak ve daha fazlası.">
-    <meta name="keywords" content="oyun, online oyun, 101 okey, tavla, dama, batak, ücretsiz oyunlar">
-    <meta name="robots" content="index, follow">
+<meta name="description" content="OynaKazan - Ücretsiz online oyunlar, masa oyunları, zeka oyunları ve eğlenceli oyunlar.">
+<meta name="robots" content="index, follow">
 
-    <title>🎮 OynaKazan - Ücretsiz Online Oyunlar</title>
+<title>🎮 OynaKazan - Ücretsiz Online Oyunlar</title>
 
-    <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="style.css">
 
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 
 <body>
@@ -27,11 +26,11 @@
 
     <div class="header-stats">
 
-        <span class="coin-badge">
+        <div class="coin-badge">
             <i class="fa-solid fa-coins"></i>
-            Puan:
-            <strong id="user-score">0</strong>
-        </span>
+            <span>Puan:</span>
+            <strong id="user-score">500</strong>
+        </div>
 
         <button id="watch-ad-btn" class="ad-btn">
             <i class="fa-solid fa-video"></i>
@@ -52,18 +51,14 @@
         <h1>Ücretsiz Online Oyunlar</h1>
 
         <p>
-            101 Okey, Tavla, Dama, Batak ve daha birçok popüler oyunu
-            tek yerde keşfet.
+            Okey, Tavla, Dama, Batak, Bilardo, yarış,
+            zeka oyunları ve daha fazlası seni bekliyor.
         </p>
 
-        <div class="hero-buttons">
-
-            <a href="#oyunlar" class="hero-btn">
-                <i class="fa-solid fa-play"></i>
-                Oyunlara Başla
-            </a>
-
-        </div>
+        <a href="#oyunlar" class="hero-btn">
+            <i class="fa-solid fa-play"></i>
+            Oyunlara Başla
+        </a>
 
     </section>
 
@@ -107,348 +102,28 @@
         <div class="section-title">
 
             <div>
-
                 <span class="small-title">
                     <i class="fa-solid fa-fire"></i>
-                    POPÜLER
+                    POPÜLER OYUNLAR
                 </span>
 
                 <h2>Oyunlar</h2>
-
             </div>
 
             <span class="game-count">
-                12 Oyun
+                15 Oyun
             </span>
 
         </div>
 
 
         <div class="games-grid" id="games-container">
-
-
-            <article class="game-card"
-                     data-category="board"
-                     onclick="openGame('101 Okey', '')">
-
-                <div class="game-img okey-bg">
-
-                    <i class="fa-solid fa-dice"></i>
-
-                    <span class="game-badge">
-                        POPÜLER
-                    </span>
-
-                </div>
-
-                <div class="game-info">
-
-                    <h3>101 Okey</h3>
-
-                    <p>
-                        Klasik 101 Okey deneyimini online olarak yaşa.
-                    </p>
-
-                    <button class="play-btn">
-                        <i class="fa-solid fa-play"></i>
-                        Oyna
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <article class="game-card"
-                     data-category="board"
-                     onclick="openGame('Klasik Tavla', '')">
-
-                <div class="game-img tavla-bg">
-                    <i class="fa-solid fa-dice"></i>
-                </div>
-
-                <div class="game-info">
-
-                    <h3>Klasik Tavla</h3>
-
-                    <p>
-                        Zarları at, pullarını topla ve rakibini yen.
-                    </p>
-
-                    <button class="play-btn">
-                        <i class="fa-solid fa-play"></i>
-                        Oyna
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <article class="game-card"
-                     data-category="board"
-                     onclick="openGame('Türk Daması', '')">
-
-                <div class="game-img dama-bg">
-                    <i class="fa-solid fa-chess-board"></i>
-                </div>
-
-                <div class="game-info">
-
-                    <h3>Türk Daması</h3>
-
-                    <p>
-                        Stratejini kullan ve rakibinin taşlarını ele geçir.
-                    </p>
-
-                    <button class="play-btn">
-                        <i class="fa-solid fa-play"></i>
-                        Oyna
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <article class="game-card"
-                     data-category="cards"
-                     onclick="openGame('Batak', '')">
-
-                <div class="game-img batak-bg">
-                    <i class="fa-solid fa-club"></i>
-                </div>
-
-                <div class="game-info">
-
-                    <h3>Batak</h3>
-
-                    <p>
-                        Kozunu seç, elini iyi oyna ve rakiplerini geç.
-                    </p>
-
-                    <button class="play-btn">
-                        <i class="fa-solid fa-play"></i>
-                        Oyna
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <article class="game-card"
-                     data-category="arcade"
-                     onclick="openGame('Bilardo', '')">
-
-                <div class="game-img bilardo-bg">
-                    <i class="fa-solid fa-circle"></i>
-                </div>
-
-                <div class="game-info">
-
-                    <h3>Bilardo</h3>
-
-                    <p>
-                        Istakayı kullan, topları doğru ceplere gönder.
-                    </p>
-
-                    <button class="play-btn">
-                        <i class="fa-solid fa-play"></i>
-                        Oyna
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <article class="game-card"
-                     data-category="puzzle"
-                     onclick="openGame('Mahjong', '')">
-
-                <div class="game-img mahjong-bg">
-                    <i class="fa-solid fa-puzzle-piece"></i>
-                </div>
-
-                <div class="game-info">
-
-                    <h3>Mahjong</h3>
-
-                    <p>
-                        Aynı taşları eşleştir ve tahtayı temizle.
-                    </p>
-
-                    <button class="play-btn">
-                        <i class="fa-solid fa-play"></i>
-                        Oyna
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <article class="game-card"
-                     data-category="puzzle"
-                     onclick="openGame('Sudoku', '')">
-
-                <div class="game-img sudoku-bg">
-                    <i class="fa-solid fa-table-cells"></i>
-                </div>
-
-                <div class="game-info">
-
-                    <h3>Sudoku</h3>
-
-                    <p>
-                        Sayıları doğru yerlere yerleştir ve bulmacayı çöz.
-                    </p>
-
-                    <button class="play-btn">
-                        <i class="fa-solid fa-play"></i>
-                        Oyna
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <article class="game-card"
-                     data-category="arcade"
-                     onclick="openGame('Bubble Shooter', '')">
-
-                <div class="game-img bubble-bg">
-                    <i class="fa-solid fa-circle-dot"></i>
-                </div>
-
-                <div class="game-info">
-
-                    <h3>Bubble Shooter</h3>
-
-                    <p>
-                        Aynı renk baloncukları birleştir ve patlat.
-                    </p>
-
-                    <button class="play-btn">
-                        <i class="fa-solid fa-play"></i>
-                        Oyna
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <article class="game-card"
-                     data-category="arcade"
-                     onclick="openGame('Araba Yarışı', '')">
-
-                <div class="game-img racing-bg">
-                    <i class="fa-solid fa-car"></i>
-                </div>
-
-                <div class="game-info">
-
-                    <h3>Araba Yarışı</h3>
-
-                    <p>
-                        Yarışa katıl, rakiplerini geç ve birinci ol.
-                    </p>
-
-                    <button class="play-btn">
-                        <i class="fa-solid fa-play"></i>
-                        Oyna
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <article class="game-card"
-                     data-category="puzzle"
-                     onclick="openGame('Block Puzzle', '')">
-
-                <div class="game-img block-bg">
-                    <i class="fa-solid fa-cubes"></i>
-                </div>
-
-                <div class="game-info">
-
-                    <h3>Block Puzzle</h3>
-
-                    <p>
-                        Blokları doğru yerleştir ve mümkün olduğunca ilerle.
-                    </p>
-
-                    <button class="play-btn">
-                        <i class="fa-solid fa-play"></i>
-                        Oyna
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <article class="game-card"
-                     data-category="arcade"
-                     onclick="openGame('Okçuluk', '')">
-
-                <div class="game-img archery-bg">
-                    <i class="fa-solid fa-bullseye"></i>
-                </div>
-
-                <div class="game-info">
-
-                    <h3>Okçuluk</h3>
-
-                    <p>
-                        Hedefi nişan al ve mümkün olan en yüksek puanı kazan.
-                    </p>
-
-                    <button class="play-btn">
-                        <i class="fa-solid fa-play"></i>
-                        Oyna
-                    </button>
-
-                </div>
-
-            </article>
-
-
-            <article class="game-card"
-                     data-category="puzzle"
-                     onclick="openGame('Zeka Eşleştirme', '')">
-
-                <div class="game-img match-bg">
-                    <i class="fa-solid fa-brain"></i>
-                </div>
-
-                <div class="game-info">
-
-                    <h3>Zeka Eşleştirme</h3>
-
-                    <p>
-                        Kartları eşleştir ve hafızanı test et.
-                    </p>
-
-                    <button class="play-btn">
-                        <i class="fa-solid fa-play"></i>
-                        Oyna
-                    </button>
-
-                </div>
-
-            </article>
-
-
         </div>
 
     </section>
 
+
+    <!-- OYUN MODALI -->
 
     <div id="game-modal" class="modal hidden">
 
@@ -456,13 +131,20 @@
 
             <div class="modal-header">
 
-                <h2 id="modal-game-title">
-                    Oyun
-                </h2>
+                <div>
+                    <span id="modal-category" class="modal-category">
+                        OYUN
+                    </span>
 
-                <button class="close-modal"
-                        onclick="closeGame()"
-                        aria-label="Oyunu kapat">
+                    <h2 id="modal-game-title">
+                        Oyun
+                    </h2>
+                </div>
+
+                <button
+                    class="close-modal"
+                    id="close-modal-btn"
+                    aria-label="Kapat">
 
                     <i class="fa-solid fa-xmark"></i>
 
@@ -470,21 +152,40 @@
 
             </div>
 
-            <div class="game-frame-container">
 
-                <iframe id="game-iframe"
-                        src=""
-                        title="Oyun"
-                        frameborder="0"
-                        allowfullscreen>
-                </iframe>
-
+            <div id="game-area" class="game-area">
             </div>
 
         </div>
 
     </div>
 
+
+    <!-- PUAN BİLGİ PENCERESİ -->
+
+    <div id="message-modal" class="message-modal hidden">
+
+        <div class="message-box">
+
+            <div id="message-icon" class="message-icon">
+                🎮
+            </div>
+
+            <h2 id="message-title">
+                Bilgi
+            </h2>
+
+            <p id="message-text">
+                Bilgi
+            </p>
+
+            <button id="message-close" class="message-close">
+                Tamam
+            </button>
+
+        </div>
+
+    </div>
 
 </main>
 

@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta name="description" content="OynaKazan - Ücretsiz online oyunlar, masa oyunları, zeka oyunları ve eğlenceli oyunlar.">
+<meta name="description" content="OynaKazan - Ücretsiz online oyunlar, 101 Okey, Tavla, Dama, Batak, Bilardo, zeka oyunları ve eğlenceli oyunlar.">
+<meta name="keywords" content="oyun, online oyun, okey, 101 okey, tavla, dama, batak, bilardo, zeka oyunları">
 <meta name="robots" content="index, follow">
+
+<meta name="theme-color" content="#070b18">
 
 <title>🎮 OynaKazan - Ücretsiz Online Oyunlar</title>
 
@@ -13,9 +16,14 @@
 
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
 </head>
 
 <body>
+
+<!-- =========================================================
+     ANA HEADER
+========================================================= -->
 
 <header class="main-header">
 
@@ -32,9 +40,14 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
             <strong id="user-score">500</strong>
         </div>
 
-        <button id="watch-ad-btn" class="ad-btn">
+        <button
+            id="watch-ad-btn"
+            class="ad-btn"
+            type="button">
+
             <i class="fa-solid fa-video"></i>
-            Reklam İzle & Puan Kazan
+            Reklam İzle &amp; Puan Kazan
+
         </button>
 
     </div>
@@ -42,26 +55,111 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
 </header>
 
 
+<!-- =========================================================
+     ANA İÇERİK
+========================================================= -->
+
 <main class="container">
+
+
+    <!-- =====================================================
+         HERO
+    ====================================================== -->
 
     <section class="hero-banner">
 
-        <div class="hero-icon">🎮</div>
+        <div class="hero-icon">
+            🎮
+        </div>
 
-        <h1>Ücretsiz Online Oyunlar</h1>
+        <div class="hero-content">
 
-        <p>
-            Okey, Tavla, Dama, Batak, Bilardo, yarış,
-            zeka oyunları ve daha fazlası seni bekliyor.
-        </p>
+            <span class="hero-badge">
+                <i class="fa-solid fa-bolt"></i>
+                15 OYUN • MOBİL • PC
+            </span>
 
-        <a href="#oyunlar" class="hero-btn">
-            <i class="fa-solid fa-play"></i>
-            Oyunlara Başla
-        </a>
+            <h1>
+                OynaKazan
+            </h1>
+
+            <h2>
+                Ücretsiz Online Oyunlar
+            </h2>
+
+            <p>
+                101 Okey, Tavla, Dama, Batak, Bilardo,
+                zeka oyunları, yarış oyunları ve daha fazlası
+                seni bekliyor.
+            </p>
+
+            <a
+                href="#oyunlar"
+                class="hero-btn">
+
+                <i class="fa-solid fa-play"></i>
+                Oyunlara Başla
+
+            </a>
+
+        </div>
 
     </section>
 
+
+    <!-- =====================================================
+         HIZLI BİLGİLER
+    ====================================================== -->
+
+    <section class="quick-info">
+
+        <div class="quick-card">
+
+            <div class="quick-icon">
+                🀄
+            </div>
+
+            <div>
+                <strong>4 Masa Oyunu</strong>
+                <span>Okey • Tavla • Dama • Batak</span>
+            </div>
+
+        </div>
+
+
+        <div class="quick-card">
+
+            <div class="quick-icon">
+                🎮
+            </div>
+
+            <div>
+                <strong>15 Farklı Oyun</strong>
+                <span>Her yaşa uygun eğlence</span>
+            </div>
+
+        </div>
+
+
+        <div class="quick-card">
+
+            <div class="quick-icon">
+                📱
+            </div>
+
+            <div>
+                <strong>Her Cihazda</strong>
+                <span>Telefon • Tablet • Bilgisayar</span>
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         KATEGORİLER
+    ====================================================== -->
 
     <section class="categories-section">
 
@@ -72,24 +170,58 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
 
         <div class="categories">
 
-            <button class="cat-btn active" data-filter="all">
+            <button
+                class="cat-btn active"
+                data-filter="all"
+                type="button">
+
+                <i class="fa-solid fa-border-all"></i>
                 Tüm Oyunlar
+
             </button>
 
-            <button class="cat-btn" data-filter="board">
+
+            <button
+                class="cat-btn"
+                data-filter="board"
+                type="button">
+
+                <i class="fa-solid fa-chess-board"></i>
                 Masa Oyunları
+
             </button>
 
-            <button class="cat-btn" data-filter="cards">
+
+            <button
+                class="cat-btn"
+                data-filter="cards"
+                type="button">
+
+                <i class="fa-solid fa-clone"></i>
                 Kart Oyunları
+
             </button>
 
-            <button class="cat-btn" data-filter="puzzle">
+
+            <button
+                class="cat-btn"
+                data-filter="puzzle"
+                type="button">
+
+                <i class="fa-solid fa-puzzle-piece"></i>
                 Zeka Oyunları
+
             </button>
 
-            <button class="cat-btn" data-filter="arcade">
+
+            <button
+                class="cat-btn"
+                data-filter="arcade"
+                type="button">
+
+                <i class="fa-solid fa-gamepad"></i>
                 Eğlence
+
             </button>
 
         </div>
@@ -97,54 +229,123 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     </section>
 
 
-    <section id="oyunlar" class="games-section">
+    <!-- =====================================================
+         OYUNLAR
+    ====================================================== -->
+
+    <section
+        id="oyunlar"
+        class="games-section">
+
 
         <div class="section-title">
 
             <div>
+
                 <span class="small-title">
+
                     <i class="fa-solid fa-fire"></i>
                     POPÜLER OYUNLAR
+
                 </span>
 
-                <h2>Oyunlar</h2>
+                <h2>
+                    Oyunlar
+                </h2>
+
             </div>
 
+
             <span class="game-count">
+
+                <i class="fa-solid fa-gamepad"></i>
                 15 Oyun
+
             </span>
 
         </div>
 
 
-        <div class="games-grid" id="games-container">
+        <!--
+            Oyun kartları script.js tarafından oluşturulur.
+            Böylece oyunların tamamı tek merkezden yönetilir.
+        -->
+
+        <div
+            class="games-grid"
+            id="games-container">
+
         </div>
 
     </section>
 
 
-    <!-- OYUN MODALI -->
+    <!-- =====================================================
+         REKLAM ALANI
+    ====================================================== -->
 
-    <div id="game-modal" class="modal hidden">
+    <section class="ad-section">
+
+        <div class="ad-placeholder">
+
+            <span class="ad-label">
+                REKLAM ALANI
+            </span>
+
+            <p>
+                Oyun arasında reklam gösterimi için hazır alan.
+            </p>
+
+            <small>
+                AdSense onayından sonra gerçek reklam kodu
+                bu alana eklenebilir.
+            </small>
+
+        </div>
+
+    </section>
+
+
+    <!-- =====================================================
+         OYUN MODALI
+    ====================================================== -->
+
+    <div
+        id="game-modal"
+        class="modal hidden"
+        aria-hidden="true">
+
 
         <div class="modal-content">
+
+
+            <!-- MODAL BAŞLIK -->
 
             <div class="modal-header">
 
                 <div>
-                    <span id="modal-category" class="modal-category">
+
+                    <span
+                        id="modal-category"
+                        class="modal-category">
+
                         OYUN
+
                     </span>
+
 
                     <h2 id="modal-game-title">
                         Oyun
                     </h2>
+
                 </div>
+
 
                 <button
                     class="close-modal"
                     id="close-modal-btn"
-                    aria-label="Kapat">
+                    type="button"
+                    aria-label="Oyunu kapat">
 
                     <i class="fa-solid fa-xmark"></i>
 
@@ -153,7 +354,57 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
             </div>
 
 
-            <div id="game-area" class="game-area">
+            <!-- =================================================
+                 OYUN ALANI
+
+                 101 Okey:
+                 - Okey masası
+                 - Rakipler
+                 - Taşlar
+                 - Iskarta alanı
+
+                 Tavla:
+                 - 24 kapı
+                 - Pullar
+                 - Zarlar
+
+                 Dama:
+                 - 8x8 tahta
+                 - Taşlar
+                 - Hamleler
+
+                 Batak:
+                 - 4 kişilik masa
+                 - Kartlar
+                 - Koz
+                 - El sistemi
+
+                 Diğer oyunlar da aynı alanı kullanır.
+            ================================================== -->
+
+            <div
+                id="game-area"
+                class="game-area">
+
+            </div>
+
+
+            <!-- =================================================
+                 OYUN ALT BİLGİ
+            ================================================== -->
+
+            <div class="game-modal-footer">
+
+                <span>
+                    <i class="fa-solid fa-coins"></i>
+                    Puan sistemi aktif
+                </span>
+
+                <span>
+                    <i class="fa-solid fa-mobile-screen"></i>
+                    Mobil uyumlu
+                </span>
+
             </div>
 
         </div>
@@ -161,64 +412,131 @@ href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     </div>
 
 
-    <!-- PUAN BİLGİ PENCERESİ -->
+    <!-- =====================================================
+         MESAJ / PUAN PENCERESİ
+    ====================================================== -->
 
-    <div id="message-modal" class="message-modal hidden">
+    <div
+        id="message-modal"
+        class="message-modal hidden"
+        aria-hidden="true">
+
 
         <div class="message-box">
 
-            <div id="message-icon" class="message-icon">
+            <div
+                id="message-icon"
+                class="message-icon">
+
                 🎮
+
             </div>
+
 
             <h2 id="message-title">
                 Bilgi
             </h2>
 
+
             <p id="message-text">
                 Bilgi
             </p>
 
-            <button id="message-close" class="message-close">
+
+            <button
+                id="message-close"
+                class="message-close"
+                type="button">
+
                 Tamam
+
             </button>
 
         </div>
 
     </div>
 
+
 </main>
 
+
+<!-- =========================================================
+     FOOTER
+========================================================= -->
 
 <footer>
 
     <div class="footer-content">
 
+
         <div class="footer-logo">
-            🎮 OynaKazan
+
+            <i class="fa-solid fa-gamepad"></i>
+            OynaKazan
+
         </div>
+
 
         <p>
             Ücretsiz online oyun platformu.
+            Oyna, eğlen, puan kazan!
         </p>
+
 
         <div class="footer-links">
 
-            <a href="hakkimizda.html">Hakkımızda</a>
-            <a href="iletisim.html">İletişim</a>
-            <a href="gizlilik.html">Gizlilik</a>
-            <a href="kullanim-sartlari.html">Kullanım Şartları</a>
+            <a href="hakkimizda.html">
+                Hakkımızda
+            </a>
+
+            <a href="iletisim.html">
+                İletişim
+            </a>
+
+            <a href="gizlilik.html">
+                Gizlilik
+            </a>
+
+            <a href="kullanim-sartlari.html">
+                Kullanım Şartları
+            </a>
 
         </div>
+
 
         <p class="copyright">
             © 2026 OynaKazan - Tüm Hakları Saklıdır.
         </p>
 
+
     </div>
 
 </footer>
 
+
+<!-- =========================================================
+     JAVASCRIPT
+     
+     Oyun motoru burada yüklenir.
+     
+     15 oyun:
+     
+     1.  101 Okey
+     2.  Klasik Tavla
+     3.  Türk Daması
+     4.  Batak
+     5.  Bilardo
+     6.  Mahjong
+     7.  Sudoku
+     8.  Bubble Shooter
+     9.  Araba Yarışı
+     10. Block Puzzle
+     11. Okçuluk
+     12. Zeka Eşleştirme
+     13. Hafıza Oyunu
+     14. Yılan Oyunu
+     15. Basket Atışı
+========================================================= -->
 
 <script src="script.js"></script>
 

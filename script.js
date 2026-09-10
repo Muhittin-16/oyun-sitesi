@@ -1,1928 +1,1726 @@
-
-
 /* ============================================================
-   OYUN DÜNYASI / OYNAKAZAN
-   15 OYUN - GELİŞMİŞ OYUN MOTORU
-   TEK PARÇA script.js
+   OYNAKAZAN - 15 OYUNLU ÇALIŞAN OYUN MOTORU
+   TEK DOSYA: script.js
+   index.html ve stil.css ile uyumludur.
    ============================================================ */
 
 (() => {
 "use strict";
 
 /* ============================================================
-   GENEL SİSTEM
-   ============================================================ */
-
-const GAME_KEY = "oynakazan_current_game";
-const SCORE_KEY = "oynakazan_score";
-const XP_KEY = "oynakazan_xp";
-const LEVEL_KEY = "oynakazan_level";
-const PLAYED_KEY = "oynakazan_played";
-const COIN_KEY = "oynakazan_coins";
-const STATS_KEY = "oyunDunyasiStats";
-
-const START_SCORE = 500;
-const ENTRY_COST = 50;
-const MAX_LEVEL = 100;
-
-let score = Number(localStorage.getItem(SCORE_KEY));
-if (!Number.isFinite(score)) score = START_SCORE;
-
-let xp = Number(localStorage.getItem(XP_KEY)) || 0;
-let level = Number(localStorage.getItem(LEVEL_KEY)) || 1;
-let played = Number(localStorage.getItem(PLAYED_KEY)) || 0;
-let coins = Number(localStorage.getItem(COIN_KEY)) || 0;
-
-let currentGame = null;
-let gameTimer = null;
-
-/* ============================================================
-   YARDIMCI FONKSİYONLAR
+   TEMEL YARDIMCILAR
    ============================================================ */
 
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 
-function esc(str) {
-    return String(str ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-}
+const rand = (min, max) =>
+    Math.floor(Math.random() * (max - min + 1)) + min;
 
-function rand(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-}
-
-function shuffle(arr) {
+const shuffle = arr => {
     const a = [...arr];
-    for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
+    for(let i=a.length-1;i>0;i--){
+        const j=Math.floor(Math.random()*(i+1));
+        [a[i],a[j]]=[a[j],a[i]];
     }
     return a;
-}
+};
 
-function delay(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+const esc = value =>
+    String(value ?? "")
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
 
-function saveProgress() {
-    localStorage.setItem(SCORE_KEY, String(score));
-    localStorage.setItem(XP_KEY, String(xp));
-    localStorage.setItem(LEVEL_KEY, String(level));
-    localStorage.setItem(PLAYED_KEY, String(played));
-    localStorage.setItem(COIN_KEY, String(coins));
-}
+let currentGame = null;
+let gameTimer = null;
+let gameTimeouts = [];
 
-function xpNeeded() {
-    return 100 + ((level - 1) * 25);
-}
-
-function addXP(amount) {
-    xp += amount;
-
-    while (level < MAX_LEVEL && xp >= xpNeeded()) {
-        xp -= xpNeeded();
-        level++;
-        coins += 25;
-        notify("🎉 Seviye atladın! +" + 25 + " 🪙");
+function clearGameTimers(){
+    if(gameTimer){
+        clearInterval(gameTimer);
+        clearTimeout(gameTimer);
+        gameTimer=null;
     }
 
-    saveProgress();
-    updateTopUI();
+    gameTimeouts.forEach(t=>{
+        clearTimeout(t);
+        clearInterval(t);
+    });
+
+    gameTimeouts=[];
 }
 
-function changeScore(amount) {
-    score += amount;
-    if (score < 0) score = 0;
-    saveProgress();
-    updateTopUI();
-}
-
-function updateTopUI() {
-    const scoreEls = [
-        "#score", "#playerScore", "#puan", ".score-value"
-    ];
-
-    const levelEls = [
-        "#level", "#playerLevel", ".level-value"
-    ];
-
-    const coinEls = [
-        "#coins", "#coin", "#bonus", ".coin-value"
-    ];
-
-    scoreEls.forEach(s => $$(s).forEach(e => e.textContent = score));
-    levelEls.forEach(s => $$(s).forEach(e => e.textContent = level));
-    coinEls.forEach(s => $$(s).forEach(e => e.textContent = coins));
-}
-
-function notify(text) {
-    let box = $("#oynakazanToast");
-
-    if (!box) {
-        box = document.createElement("div");
-        box.id = "oynakazanToast";
-        box.style.cssText = `
-            position:fixed;
-            left:50%;
-            bottom:25px;
-            transform:translateX(-50%);
-            z-index:999999;
-            background:#10182e;
-            color:white;
-            padding:14px 20px;
-            border-radius:14px;
-            border:1px solid rgba(255,255,255,.15);
-            box-shadow:0 12px 35px rgba(0,0,0,.4);
-            font-weight:700;
-            opacity:0;
-            transition:.25s;
-            pointer-events:none;
-        `;
-        document.body.appendChild(box);
-    }
-
-    box.textContent = text;
-    box.style.opacity = "1";
-
-    clearTimeout(box._timer);
-    box._timer = setTimeout(() => {
-        box.style.opacity = "0";
-    }, 2200);
-}
-
-function gameReward(win = true) {
-    if (win) {
-        changeScore(100);
-        coins += 10;
-        addXP(35);
-        notify("🏆 Kazandın! +100 puan +10 🪙 +35 XP");
-    } else {
-        addXP(10);
-        notify("👏 El tamamlandı! +10 XP");
-    }
-    saveProgress();
-}
-
-function startGameCost() {
-    if (score < ENTRY_COST) {
-        notify("❌ Oyuna başlamak için en az " + ENTRY_COST + " puanın olmalı.");
-        return false;
-    }
-
-    changeScore(-ENTRY_COST);
-    played++;
-    saveProgress();
-    return true;
+function later(fn,ms){
+    const t=setTimeout(fn,ms);
+    gameTimeouts.push(t);
+    return t;
 }
 
 /* ============================================================
-   OYUN MODALINI BUL / OLUŞTUR
+   OYUNCU İLERLEMESİ
    ============================================================ */
 
-function ensureModal() {
-    let modal = $("#gameModal");
+let score = Number(localStorage.getItem("oynakazan_score") || 500);
+let xp = Number(localStorage.getItem("oynakazan_xp") || 0);
+let level = Number(localStorage.getItem("oynakazan_level") || 1);
+let coins = Number(localStorage.getItem("oynakazan_coins") || 0);
+let played = Number(localStorage.getItem("oynakazan_played") || 0);
 
-    if (!modal) {
-        modal = document.createElement("div");
-        modal.id = "gameModal";
-        modal.className = "modal";
-        modal.innerHTML = `
-            <div class="game-modal-inner">
-                <button id="closeGame" class="game-close">✕</button>
-                <div id="gameTitle"></div>
-                <div id="gameArea"></div>
-            </div>
-        `;
-
-        document.body.appendChild(modal);
-    }
-
-    let area = $("#gameArea", modal);
-    let title = $("#gameTitle", modal);
-
-    if (!area) {
-        area = document.createElement("div");
-        area.id = "gameArea";
-        modal.appendChild(area);
-    }
-
-    if (!title) {
-        title = document.createElement("div");
-        title.id = "gameTitle";
-        modal.prepend(title);
-    }
-
-    const close = $("#closeGame", modal);
-    if (close && !close.dataset.bound) {
-        close.dataset.bound = "1";
-        close.addEventListener("click", closeGame);
-    }
-
-    modal.style.zIndex = "100000";
-    return { modal, area, title };
+function xpNeeded(){
+    return 100 + ((level-1)*50);
 }
 
-function openGameModal(title, html) {
-    const { modal, area, title: titleEl } = ensureModal();
+function saveProgress(){
+    localStorage.setItem("oynakazan_score",String(score));
+    localStorage.setItem("oynakazan_xp",String(xp));
+    localStorage.setItem("oynakazan_level",String(level));
+    localStorage.setItem("oynakazan_coins",String(coins));
+    localStorage.setItem("oynakazan_played",String(played));
 
-    titleEl.innerHTML = `
-        <div style="
-            font-size:24px;
-            font-weight:900;
-            padding:12px 0 18px;
-        ">${title}</div>
-    `;
+    localStorage.setItem("oyunDunyasiStats",JSON.stringify({
+        best:score,
+        played,
+        coins,
+        xp
+    }));
+}
 
-    area.innerHTML = html;
+function updateTopUI(){
+    const scoreEl=$("#user-score");
+
+    if(scoreEl)
+        scoreEl.textContent=score.toLocaleString("tr-TR");
+
+    const oldScore=$("#score");
+    if(oldScore) oldScore.textContent=score;
+
+    const oldCoins=$("#coins");
+    if(oldCoins) oldCoins.textContent=coins;
+
+    const levelEl=$("#level");
+    if(levelEl) levelEl.textContent=level;
+}
+
+function addXP(amount){
+    xp+=amount;
+
+    let leveled=false;
+
+    while(xp>=xpNeeded()){
+        xp-=xpNeeded();
+        level++;
+        coins+=10;
+        leveled=true;
+    }
+
+    if(leveled){
+        notify(
+            `⭐ Seviye ${level}! +10 🪙 kazandın.`,
+            "⭐",
+            "Seviye Atladın"
+        );
+    }
+
+    saveProgress();
+    updateTopUI();
+}
+
+function changeScore(amount){
+    score=Math.max(0,score+amount);
+    saveProgress();
+    updateTopUI();
+}
+
+function gameReward(win=true){
+    played++;
+
+    if(win){
+        changeScore(50);
+        coins+=15;
+        addXP(25);
+    }else{
+        changeScore(10);
+        coins+=3;
+        addXP(8);
+    }
+
+    saveProgress();
+    updateTopUI();
+}
+
+/* ============================================================
+   BİLGİ MESAJI
+   ============================================================ */
+
+function notify(text,icon="🎮",title="Bilgi"){
+    const modal=$("#message-modal");
+    const textEl=$("#message-text");
+    const titleEl=$("#message-title");
+    const iconEl=$("#message-icon");
+    const close=$("#message-close");
+
+    if(!modal){
+        alert(text);
+        return;
+    }
+
+    if(textEl) textEl.textContent=text;
+    if(titleEl) titleEl.textContent=title;
+    if(iconEl) iconEl.textContent=icon;
 
     modal.classList.remove("hidden");
-    modal.classList.add("active");
 
-    modal.style.display = "flex";
-    modal.style.position = "fixed";
-    modal.style.inset = "0";
-    modal.style.overflow = "auto";
-
-    document.body.style.overflow = "hidden";
-}
-
-function closeGame() {
-    clearInterval(gameTimer);
-    clearTimeout(gameTimer);
-
-    const modal = $("#gameModal");
-
-    if (modal) {
-        modal.classList.remove("active");
-        modal.classList.add("hidden");
-        modal.style.display = "none";
+    if(close){
+        close.onclick=()=>{
+            modal.classList.add("hidden");
+        };
     }
-
-    document.body.style.overflow = "";
-    currentGame = null;
 }
 
 /* ============================================================
-   OYUN İSİMLERİ / İKONLAR
+   15 OYUN BİLGİLERİ
    ============================================================ */
 
-const GAME_META = {
-    okey: {
-        name:"101 Okey",
+const GAME_META={
+
+    okey:{
+        title:"101 Okey",
+        category:"Masa Oyunları",
+        filter:"board",
         icon:"🀄",
-        color:"emerald"
+        color:"#ffb703",
+        desc:"106 taşlı gerçekçi 101 Okey masası."
     },
+
     tavla:{
-        name:"Klasik Tavla",
-        icon:"⚫",
-        color:"wood"
+        title:"Klasik Tavla",
+        category:"Masa Oyunları",
+        filter:"board",
+        icon:"🎲",
+        color:"#c77d32",
+        desc:"15'e 15 pullarla klasik tavla."
     },
+
     dama:{
-        name:"Türk Daması",
-        icon:"🔴",
-        color:"red"
+        title:"Türk Daması",
+        category:"Masa Oyunları",
+        filter:"board",
+        icon:"⚫",
+        color:"#ef476f",
+        desc:"Zorunlu alma ve zincir hamleli dama."
     },
+
     batak:{
-        name:"Batak",
+        title:"Batak",
+        category:"Kart Oyunları",
+        filter:"cards",
         icon:"🂡",
-        color:"card"
+        color:"#8d99ae",
+        desc:"52 kartlı dört kişilik Batak."
     },
+
     bilardo:{
-        name:"Bilardo",
+        title:"Bilardo",
+        category:"Spor",
+        filter:"arcade",
         icon:"🎱",
-        color:"pool"
+        color:"#00b4d8",
+        desc:"15 toplu bilardo masası."
     },
+
     mahjong:{
-        name:"Mahjong",
+        title:"Mahjong",
+        category:"Zeka Oyunları",
+        filter:"puzzle",
         icon:"🀙",
-        color:"jade"
+        color:"#52b788",
+        desc:"Taş eşleştirmeli Mahjong."
     },
+
     sudoku:{
-        name:"Sudoku",
-        icon:"🔢"
+        title:"Sudoku",
+        category:"Zeka Oyunları",
+        filter:"puzzle",
+        icon:"🔢",
+        color:"#6c63ff",
+        desc:"1-9 rakamlarıyla Sudoku."
     },
+
     bubble:{
-        name:"Bubble Shooter",
-        icon:"🫧"
+        title:"Bubble Shooter",
+        category:"Eğlence",
+        filter:"arcade",
+        icon:"🫧",
+        color:"#00d4ff",
+        desc:"Baloncukları eşleştir ve temizle."
     },
+
     race:{
-        name:"Araba Yarışı",
-        icon:"🏎️"
+        title:"Araba Yarışı",
+        category:"Yarış",
+        filter:"arcade",
+        icon:"🏎️",
+        color:"#f72585",
+        desc:"Rakiplerini geç ve yarışı kazan."
     },
+
     block:{
-        name:"Block Puzzle",
-        icon:"🧩"
+        title:"Block Puzzle",
+        category:"Zeka Oyunları",
+        filter:"puzzle",
+        icon:"🧩",
+        color:"#8338ec",
+        desc:"Satırları doldur ve temizle."
     },
+
     archery:{
-        name:"Okçuluk",
-        icon:"🏹"
+        title:"Okçuluk",
+        category:"Beceri",
+        filter:"arcade",
+        icon:"🏹",
+        color:"#fb8500",
+        desc:"Hedefi vur, yüksek skor yap."
     },
+
     memory:{
-        name:"Zeka Eşleştirme",
-        icon:"🧠"
+        title:"Zeka Eşleştirme",
+        category:"Zeka Oyunları",
+        filter:"puzzle",
+        icon:"🧠",
+        color:"#ff006e",
+        desc:"Kartların eşlerini bul."
     },
+
     memory2:{
-        name:"Hafıza Oyunu",
-        icon:"🃏"
+        title:"Hafıza Oyunu",
+        category:"Zeka Oyunları",
+        filter:"puzzle",
+        icon:"🃏",
+        color:"#3a86ff",
+        desc:"Daha büyük kart destesiyle hafıza."
     },
+
     snake:{
-        name:"Yılan Oyunu",
-        icon:"🐍"
+        title:"Yılan Oyunu",
+        category:"Eğlence",
+        filter:"arcade",
+        icon:"🐍",
+        color:"#80ed99",
+        desc:"Yılanı büyüt ve rekor kır."
     },
+
     basket:{
-        name:"Basket Atışı",
-        icon:"🏀"
+        title:"Basket Atışı",
+        category:"Spor",
+        filter:"arcade",
+        icon:"🏀",
+        color:"#fb8500",
+        desc:"Atışlarını yap, 100 puana ulaş."
     }
 };
 
 /* ============================================================
-   ANA OYUN AÇICI
+   OYUN KARTLARINI OLUŞTUR
    ============================================================ */
 
-function openGame(gameId) {
-    clearInterval(gameTimer);
-    currentGame = gameId;
+function createGameCards(){
 
-    if (!startGameCost()) return;
+    const container=$("#games-container");
 
-    switch (gameId) {
-        case "okey":
-            OkeyGame.start();
-            break;
+    if(!container)return;
 
-        case "tavla":
-            TavlaGame.start();
-            break;
+    container.innerHTML="";
 
-        case "dama":
-            DamaGame.start();
-            break;
+    Object.entries(GAME_META).forEach(([id,game])=>{
 
-        case "batak":
-            BatakGame.start();
-            break;
+        const card=document.createElement("article");
 
-        case "bilardo":
-            BilardoGame.start();
-            break;
+        card.className="game-card";
+        card.dataset.game=id;
+        card.dataset.id=id;
+        card.dataset.category=game.filter;
+        card.dataset.cat=game.filter;
 
-        case "mahjong":
-            MahjongGame.start();
-            break;
+        card.innerHTML=`
+            <div class="game-image"
+                 style="
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    min-height:120px;
+                    font-size:70px;
+                    background:
+                    radial-gradient(
+                        circle at 50% 35%,
+                        ${game.color}55,
+                        transparent 65%
+                    );
+                 ">
+                ${game.icon}
+            </div>
 
-        case "sudoku":
-            SudokuGame.start();
-            break;
+            <div class="game-card-content">
+                <div style="
+                    font-size:11px;
+                    font-weight:800;
+                    opacity:.65;
+                    text-transform:uppercase;
+                    margin-bottom:5px;
+                ">
+                    ${esc(game.category)}
+                </div>
 
-        case "bubble":
-            BubbleGame.start();
-            break;
+                <h3>${esc(game.title)}</h3>
 
-        case "race":
-            RaceGame.start();
-            break;
+                <p>${esc(game.desc)}</p>
 
-        case "block":
-            BlockGame.start();
-            break;
+                <button
+                    class="play-game play-btn"
+                    data-play="${id}"
+                    type="button"
+                >
+                    <i class="fa-solid fa-play"></i>
+                    Oyna
+                </button>
+            </div>
+        `;
 
-        case "archery":
-            ArcheryGame.start();
-            break;
+        container.appendChild(card);
+    });
 
-        case "memory":
-            MemoryGame.start();
-            break;
-
-        case "memory2":
-            Memory2Game.start();
-            break;
-
-        case "snake":
-            SnakeGame.start();
-            break;
-
-        case "basket":
-            BasketGame.start();
-            break;
-
-        default:
-            notify("Bu oyun bulunamadı.");
-    }
+    bindGameButtons();
+    improveGameCards();
 }
-
-window.openGame = openGame;
-window.closeGame = closeGame;
 
 /* ============================================================
-   KART / OKEY / MASA ORTAK STİLLER
+   MODAL
    ============================================================ */
 
-function injectGameCSS() {
-    if ($("#oynakazanGameCSS")) return;
+function openGameModal(title,html){
 
-    const style = document.createElement("style");
-    style.id = "oynakazanGameCSS";
+    const modal=$("#game-modal");
+    const area=$("#game-area");
+    const titleEl=$("#modal-game-title");
+    const category=$("#modal-category");
 
-    style.textContent = `
-    .game-shell{
-        width:min(1180px,96vw);
-        margin:auto;
-        color:#fff;
-        font-family:inherit;
+    if(!modal || !area){
+        console.error("Oyun modalı bulunamadı.");
+        return;
     }
 
-    .game-toolbar{
-        display:flex;
-        flex-wrap:wrap;
-        gap:8px;
-        align-items:center;
-        justify-content:center;
-        margin:10px 0 18px;
+    if(titleEl)
+        titleEl.textContent=title;
+
+    if(category){
+        const game=GAME_META[currentGame];
+        category.textContent=game ? game.category.toUpperCase() : "OYUN";
     }
 
-    .game-btn{
-        border:0;
-        border-radius:12px;
-        padding:10px 15px;
-        cursor:pointer;
-        color:#fff;
-        background:#26345e;
-        font-weight:800;
-        transition:.2s;
-    }
+    area.innerHTML=html;
 
-    .game-btn:hover{
-        transform:translateY(-1px);
-        filter:brightness(1.15);
-    }
+    modal.classList.remove("hidden");
 
-    .game-btn.primary{
-        background:#6c63ff;
-    }
-
-    .game-btn.success{
-        background:#159957;
-    }
-
-    .game-btn.danger{
-        background:#c43c56;
-    }
-
-    .game-btn.gold{
-        background:#b88916;
-    }
-
-    .game-status{
-        text-align:center;
-        font-weight:800;
-        min-height:25px;
-        margin:8px;
-    }
-
-    .players-select{
-        display:flex;
-        justify-content:center;
-        gap:10px;
-        flex-wrap:wrap;
-        margin:15px 0;
-    }
-
-    .players-select button{
-        min-width:90px;
-    }
-
-    .table{
-        position:relative;
-        border-radius:24px;
-        overflow:hidden;
-        box-shadow:0 15px 50px rgba(0,0,0,.4);
-    }
-
-    .seat{
-        padding:10px;
-        border-radius:14px;
-        background:rgba(0,0,0,.22);
-        text-align:center;
-        font-weight:800;
-    }
-
-    /* OKEY */
-    .okey-table{
-        min-height:650px;
-        padding:25px;
-        background:radial-gradient(circle,#13734d,#075033 65%,#043524);
-        border:12px solid #6b421f;
-    }
-
-    .okey-seat{
-        position:absolute;
-        min-width:170px;
-    }
-
-    .okey-top{top:12px;left:50%;transform:translateX(-50%)}
-    .okey-left{left:12px;top:50%;transform:translateY(-50%)}
-    .okey-right{right:12px;top:50%;transform:translateY(-50%)}
-    .okey-bottom{bottom:10px;left:50%;transform:translateX(-50%);width:min(95%,850px)}
-
-    .tile-rack{
-        display:flex;
-        gap:4px;
-        flex-wrap:wrap;
-        justify-content:center;
-        padding:10px;
-    }
-
-    .okey-tile{
-        width:39px;
-        height:54px;
-        border-radius:6px;
-        background:linear-gradient(135deg,#fff,#e7e7e7);
-        color:#222;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        font-size:20px;
-        font-weight:900;
-        box-shadow:0 3px 5px rgba(0,0,0,.35);
-        cursor:pointer;
-        user-select:none;
-        border:1px solid #bbb;
-    }
-
-    .okey-tile.red{color:#d62e2e}
-    .okey-tile.blue{color:#1753c5}
-    .okey-tile.black{color:#171717}
-    .okey-tile.green{color:#168146}
-    .okey-tile.selected{
-        transform:translateY(-12px);
-        outline:3px solid #ffd166;
-    }
-
-    .discard-area{
-        position:absolute;
-        left:50%;
-        top:50%;
-        transform:translate(-50%,-50%);
-        width:330px;
-        min-height:150px;
-        text-align:center;
-    }
-
-    .discard-pile{
-        display:flex;
-        flex-wrap:wrap;
-        gap:4px;
-        justify-content:center;
-        max-height:145px;
-        overflow:auto;
-        padding:10px;
-    }
-
-    /* TAVLA */
-    .backgammon{
-        background:#713f1f;
-        border:12px solid #321b0d;
-        padding:20px;
-        min-height:670px;
-    }
-
-    .board-inner{
-        position:relative;
-        display:grid;
-        grid-template-columns:repeat(12,1fr);
-        gap:5px;
-        background:#d4a15a;
-        padding:15px 55px;
-        min-height:600px;
-        border-radius:12px;
-    }
-
-    .point{
-        position:relative;
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        justify-content:flex-start;
-        min-height:270px;
-        cursor:pointer;
-    }
-
-    .point.bottom{
-        justify-content:flex-end;
-    }
-
-    .triangle{
-        width:0;
-        height:0;
-        border-left:24px solid transparent;
-        border-right:24px solid transparent;
-        border-top:210px solid #b13e29;
-    }
-
-    .point:nth-child(even) .triangle{
-        border-top-color:#ecd9a1;
-    }
-
-    .point.bottom .triangle{
-        transform:rotate(180deg);
-    }
-
-    .checkers{
-        position:absolute;
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        gap:1px;
-        top:2px;
-    }
-
-    .point.bottom .checkers{
-        top:auto;
-        bottom:2px;
-    }
-
-    .checker{
-        width:36px;
-        height:36px;
-        border-radius:50%;
-        border:3px solid #222;
-        box-shadow:0 2px 4px rgba(0,0,0,.4);
-    }
-
-    .checker.white{
-        background:linear-gradient(#fff,#aaa);
-    }
-
-    .checker.black{
-        background:linear-gradient(#333,#050505);
-        border-color:#aaa;
-    }
-
-    .bar{
-        position:absolute;
-        left:50%;
-        top:0;
-        bottom:0;
-        transform:translateX(-50%);
-        width:42px;
-        background:#30180d;
-        z-index:5;
-    }
-
-    .dice-center{
-        position:absolute;
-        z-index:20;
-        left:50%;
-        top:50%;
-        transform:translate(-50%,-50%);
-        display:flex;
-        flex-direction:column;
-        align-items:center;
-        gap:8px;
-    }
-
-    .dice{
-        display:flex;
-        gap:8px;
-    }
-
-    .die{
-        width:48px;
-        height:48px;
-        background:#fff;
-        color:#111;
-        border-radius:8px;
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        font-size:28px;
-        font-weight:900;
-        box-shadow:0 4px 12px rgba(0,0,0,.4);
-    }
-
-    /* DAMA */
-    .dama-board{
-        width:min(90vw,650px);
-        aspect-ratio:1;
-        margin:auto;
-        display:grid;
-        grid-template-columns:repeat(8,1fr);
-        border:8px solid #4b2b18;
-    }
-
-    .dama-cell{
-        position:relative;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        cursor:pointer;
-    }
-
-    .dama-cell.light{background:#e7c99b}
-    .dama-cell.dark{background:#6f3f24}
-
-    .dama-piece{
-        width:75%;
-        aspect-ratio:1;
-        border-radius:50%;
-        border:4px solid rgba(0,0,0,.45);
-        box-shadow:0 5px 8px rgba(0,0,0,.35);
-    }
-
-    .dama-piece.white{background:linear-gradient(#fff,#aaa)}
-    .dama-piece.black{background:linear-gradient(#333,#050505)}
-    .dama-piece.king::after{
-        content:"♛";
-        color:#ffd166;
-        font-size:30px;
-    }
-
-    .dama-cell.selected{
-        outline:4px solid #ffd166;
-        outline-offset:-4px;
-    }
-
-    .dama-cell.capture{
-        box-shadow:inset 0 0 0 5px #ffcf33;
-    }
-
-    /* BATAK */
-    .card-table{
-        min-height:650px;
-        background:radial-gradient(circle,#176c3d,#063b22);
-        border:12px solid #6b421f;
-        padding:20px;
-    }
-
-    .playing-card{
-        width:55px;
-        height:78px;
-        background:#fff;
-        color:#111;
-        border-radius:7px;
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        font-size:21px;
-        font-weight:900;
-        box-shadow:0 4px 7px rgba(0,0,0,.4);
-        cursor:pointer;
-        user-select:none;
-    }
-
-    .playing-card.red{color:#c52235}
-
-    .card-hand{
-        display:flex;
-        justify-content:center;
-        flex-wrap:wrap;
-        gap:5px;
-        padding:8px;
-    }
-
-    .card-back{
-        background:repeating-linear-gradient(
-            45deg,#1f3d8f,#1f3d8f 5px,#284ca9 5px,#284ca9 10px
-        );
-        color:transparent;
-        border:3px solid #fff;
-    }
-
-    .trick-area{
-        min-height:150px;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        gap:15px;
-        flex-wrap:wrap;
-    }
-
-    /* BİLARDO */
-    .pool-table{
-        position:relative;
-        width:min(96vw,1000px);
-        aspect-ratio:2/1;
-        margin:auto;
-        background:#08723c;
-        border:22px solid #4c2c17;
-        border-radius:20px;
-        box-shadow:inset 0 0 0 8px #062c1b,0 20px 50px rgba(0,0,0,.45);
-        overflow:hidden;
-    }
-
-    .pocket{
-        position:absolute;
-        width:45px;
-        height:45px;
-        border-radius:50%;
-        background:#050505;
-        z-index:3;
-    }
-
-    .pocket.p1{left:-5px;top:-5px}
-    .pocket.p2{right:-5px;top:-5px}
-    .pocket.p3{left:-5px;bottom:-5px}
-    .pocket.p4{right:-5px;bottom:-5px}
-    .pocket.p5{left:50%;top:-5px;transform:translateX(-50%)}
-    .pocket.p6{left:50%;bottom:-5px;transform:translateX(-50%)}
-
-    .pool-ball{
-        position:absolute;
-        width:27px;
-        height:27px;
-        border-radius:50%;
-        background:#fff;
-        border:2px solid #111;
-        display:flex;
-        justify-content:center;
-        align-items:center;
-        color:#111;
-        font-size:10px;
-        font-weight:900;
-        z-index:5;
-    }
-
-    .cue-ball{
-        background:#fff!important;
-    }
-
-    /* GENEL MOBİL */
-    @media(max-width:700px){
-        .okey-table{min-height:700px}
-        .okey-tile{width:30px;height:43px;font-size:15px}
-        .playing-card{width:43px;height:62px;font-size:16px}
-        .board-inner{padding:12px 28px}
-        .checker{width:27px;height:27px}
-        .triangle{
-            border-left-width:16px;
-            border-right-width:16px;
-            border-top-width:180px;
-        }
-        .die{width:40px;height:40px;font-size:22px}
-        .dama-board{width:94vw}
-    }
-    `;
-
-    document.head.appendChild(style);
+    document.body.style.overflow="hidden";
 }
 
-injectGameCSS();
+function closeGame(){
+
+    clearGameTimers();
+
+    const modal=$("#game-modal");
+
+    if(modal)
+        modal.classList.add("hidden");
+
+    const area=$("#game-area");
+
+    if(area)
+        area.innerHTML="";
+
+    currentGame=null;
+
+    document.body.style.overflow="";
+}
+
+/* ============================================================
+   OYUNU AÇ
+   ============================================================ */
+
+function openGame(id){
+
+    if(!GAME_META[id])return;
+
+    clearGameTimers();
+
+    currentGame=id;
+
+    const games={
+        okey:OkeyGame,
+        tavla:TavlaGame,
+        dama:DamaGame,
+        batak:BatakGame,
+        bilardo:BilardoGame,
+        mahjong:MahjongGame,
+        sudoku:SudokuGame,
+        bubble:BubbleGame,
+        race:RaceGame,
+        block:BlockGame,
+        archery:ArcheryGame,
+        memory:MemoryGame,
+        memory2:Memory2Game,
+        snake:SnakeGame,
+        basket:BasketGame
+    };
+
+    if(games[id])
+        games[id].start();
+}
 
 /* ============================================================
    101 OKEY
    ============================================================ */
 
-const OkeyGame = (() => {
+const OkeyGame=(()=>{
 
-    let state = null;
+    let state=null;
 
-    const colors = ["red","blue","black","green"];
+    const colors=["Kırmızı","Siyah","Mavi","Sarı"];
 
-    function createTiles() {
-        const tiles = [];
+    function makeTiles(){
 
-        for (let color = 0; color < 4; color++) {
-            for (let n = 1; n <= 13; n++) {
-                for (let copy = 0; copy < 2; copy++) {
+        const tiles=[];
+
+        for(let color=0;color<4;color++){
+            for(let number=1;number<=13;number++){
+                for(let copy=0;copy<2;copy++){
                     tiles.push({
-                        id: `${color}-${n}-${copy}-${Math.random()}`,
                         color,
-                        n,
-                        joker:false
+                        number,
+                        id:`${color}-${number}-${copy}`
                     });
                 }
             }
         }
 
-        tiles.push(
-            {id:"fake1",color:-1,n:0,joker:false,fake:true},
-            {id:"fake2",color:-1,n:0,joker:false,fake:true}
-        );
+        tiles.push({
+            joker:true,
+            id:"joker-1"
+        });
+
+        tiles.push({
+            joker:true,
+            id:"joker-2"
+        });
 
         return tiles;
     }
 
-    function getIndicator(tiles) {
-        const usable = tiles.filter(t => !t.fake);
-        return usable[rand(0,usable.length-1)];
+    function tileText(t){
+        if(t.joker)return "★";
+
+        return t.number;
     }
 
-    function makeOkey(indicator) {
-        let n = indicator.n + 1;
-        if (n > 13) n = 1;
+    function tileColor(t){
 
-        return {
-            color:indicator.color,
-            n,
-            joker:true
-        };
+        if(t.joker)return "#333";
+
+        return [
+            "#e63946",
+            "#111",
+            "#1976d2",
+            "#f5a400"
+        ][t.color];
     }
 
-    function tileText(t) {
-        if (t.fake) return "★";
-        if (t.joker) return "OK";
-        return String(t.n);
-    }
+    function sortHand(hand,mode="normal"){
 
-    function tileClass(t) {
-        if (t.fake) return "";
-        if (t.joker) return "green";
-        return colors[t.color];
-    }
+        if(mode==="pair"){
+            return [...hand].sort((a,b)=>{
+                if(a.joker&&!b.joker)return 1;
+                if(!a.joker&&b.joker)return -1;
 
-    function createPlayer(name, human) {
-        return {
-            name,
-            human,
-            hand:[],
-            discarded:[]
-        };
-    }
+                if(a.number!==b.number)
+                    return a.number-b.number;
 
-    function sortTiles(hand, pairs=false) {
-        hand.sort((a,b) => {
-            if (a.joker && !b.joker) return -1;
-            if (!a.joker && b.joker) return 1;
+                return a.color-b.color;
+            });
+        }
 
-            if (pairs) {
-                const pa = a.n % 2;
-                const pb = b.n % 2;
-                if (pa !== pb) return pa - pb;
-            }
+        return [...hand].sort((a,b)=>{
+            if(a.joker&&!b.joker)return 1;
+            if(!a.joker&&b.joker)return -1;
 
-            if (a.color !== b.color) return a.color - b.color;
-            return a.n - b.n;
+            if(a.color!==b.color)
+                return a.color-b.color;
+
+            return a.number-b.number;
         });
     }
 
-    function start() {
-        state = {
-            playerCount:4,
-            players:[],
-            deck:[],
-            discard:[],
-            indicator:null,
-            okey:null,
-            turn:0,
-            phase:"draw",
-            selected:[],
-            handNo:1,
-            roundScore:0
-        };
+    function start(){
 
-        showPlayerSelect();
-    }
+        const tiles=shuffle(makeTiles());
 
-    function showPlayerSelect() {
-        openGameModal("🀄 101 Okey", `
-            <div class="game-shell">
-                <div class="game-status">
-                    Kaç kişi oynayacaksınız?
-                </div>
-
-                <div class="players-select">
-                    <button class="game-btn primary" data-players="2">👥 2 Kişi</button>
-                    <button class="game-btn primary" data-players="3">👥 3 Kişi</button>
-                    <button class="game-btn primary" data-players="4">👥 4 Kişi</button>
-                </div>
-
-                <div style="
-                    max-width:650px;
-                    margin:30px auto;
-                    padding:22px;
-                    border-radius:18px;
-                    background:rgba(0,0,0,.2);
-                    text-align:center;
-                    line-height:1.7;
-                ">
-                    <b>101 Okey</b><br>
-                    Gerçek masa düzeni, taş çekme, atılan taşlar,
-                    taş dizme, çift dizme ve rakip sıraları.
-                </div>
-            </div>
-        `);
-
-        $$(".players-select button").forEach(btn => {
-            btn.onclick = () => setup(Number(btn.dataset.players));
-        });
-    }
-
-    function setup(count) {
-        state.playerCount = count;
-
-        state.players = [
-            createPlayer("Sen",true),
-            createPlayer("Oyuncu 2",false),
-            createPlayer("Oyuncu 3",false),
-            createPlayer("Oyuncu 4",false)
+        const players=[
+            {name:"Sen",hand:[],discard:[],score:0},
+            {name:"Ali",hand:[],discard:[],score:0},
+            {name:"Ayşe",hand:[],discard:[],score:0},
+            {name:"Mehmet",hand:[],discard:[],score:0}
         ];
 
-        state.players = state.players.slice(0,count);
-
-        state.deck = shuffle(createTiles());
-        state.indicator = getIndicator(state.deck);
-        state.okey = makeOkey(state.indicator);
-
-        /* Gerçek okey dağılımı: başlangıçta oyunculardan biri 15,
-           diğerleri 14 taş alır. */
-        for (let i=0;i<state.players.length;i++) {
-            const amount = i === 0 ? 15 : 14;
-
-            for (let j=0;j<amount;j++) {
-                const t = state.deck.pop();
-                if (t) state.players[i].hand.push(t);
-            }
-        }
-
-        state.turn = 0;
-        state.phase = "draw";
-        sortTiles(state.players[0].hand);
-
-        render();
-    }
-
-    function render() {
-        const p = state.players[0];
-
-        const opponents = state.players.slice(1);
-
-        const opponentHTML = opponents.map((op,i) => `
-            <div class="seat okey-seat ${
-                i===0 ? "okey-top" :
-                i===1 ? "okey-left" : "okey-right"
-            }">
-                <div>${esc(op.name)}</div>
-                <div style="opacity:.75;font-size:13px">
-                    ${op.hand.length} taş
-                    ${state.turn===i+1 ? " • 🎯 SIRA ONDA" : ""}
-                </div>
-                <div class="tile-rack">
-                    ${op.hand.slice(0,Math.min(op.hand.length,14))
-                        .map(() => `<div class="okey-tile" style="background:#254c9a;color:transparent">?</div>`).join("")}
-                </div>
-                <div style="font-size:12px;opacity:.8">
-                    ${op.discarded.length ? "Son atılan: "+tileText(op.discarded.at(-1)) : "Henüz taş atmadı"}
-                </div>
-            </div>
-        `).join("");
-
-        const playerTiles = p.hand.map((t,i) => `
-            <div class="okey-tile ${tileClass(t)} ${
-                state.selected.includes(i) ? "selected" : ""
-            }" data-index="${i}">
-                ${tileText(t)}
-            </div>
-        `).join("");
-
-        const discardHTML = state.discard.slice(-30).map((t,i) => `
-            <div class="okey-tile ${tileClass(t)}" style="transform:scale(.78)">
-                ${tileText(t)}
-            </div>
-        `).join("");
-
-        openGameModal("🀄 101 Okey", `
-            <div class="game-shell">
-                <div class="game-toolbar">
-                    <button class="game-btn primary" id="okeyDraw">
-                        🖐️ Taş Çek
-                    </button>
-                    <button class="game-btn success" id="okeyTakeDiscard">
-                        ↩️ Son Taşı Al
-                    </button>
-                    <button class="game-btn" id="okeySort">
-                        🔢 Taş Diz
-                    </button>
-                    <button class="game-btn" id="okeyPair">
-                        🟡 Çift Diz
-                    </button>
-                    <button class="game-btn danger" id="okeyDiscard">
-                        🗑️ Taş At
-                    </button>
-                    <button class="game-btn gold" id="okeyNew">
-                        🔄 Yeni El
-                    </button>
-                </div>
-
-                <div class="game-status" id="okeyStatus">
-                    ${state.turn===0
-                        ? "🎯 Sıra sende. Taş çek veya son taşı al."
-                        : "⏳ Rakip oynuyor..."}
-                </div>
-
-                <div class="table okey-table">
-                    ${opponentHTML}
-
-                    <div class="discard-area">
-                        <div style="font-weight:900;margin-bottom:8px">
-                            MASA / ATILAN TAŞLAR
-                        </div>
-                        <div class="discard-pile">
-                            ${discardHTML || "<span style='opacity:.6'>Henüz taş atılmadı</span>"}
-                        </div>
-                        <div style="margin-top:8px">
-                            Gösterge:
-                            <span class="okey-tile ${tileClass(state.indicator)}"
-                                  style="display:inline-flex;vertical-align:middle">
-                                ${tileText(state.indicator)}
-                            </span>
-                            → Okey:
-                            <b>${state.okey.n}</b>
-                        </div>
-                    </div>
-
-                    <div class="seat okey-seat okey-bottom">
-                        <div>
-                            👤 Sen
-                            ${state.turn===0 ? " • 🎯 SIRA SENDE" : ""}
-                        </div>
-
-                        <div class="tile-rack" id="okeyHand">
-                            ${playerTiles}
-                        </div>
-
-                        <div style="font-size:12px;opacity:.8">
-                            ${p.hand.length} taş
-                        </div>
-                    </div>
-                </div>
-            </div>
-        `);
-
-        $$("#okeyHand .okey-tile").forEach(el => {
-            el.onclick = () => {
-                const index = Number(el.dataset.index);
-
-                if (state.turn !== 0) return;
-
-                if (state.selected.includes(index)) {
-                    state.selected = state.selected.filter(x => x !== index);
-                } else {
-                    state.selected.push(index);
-                }
-
-                render();
-            };
+        players.forEach(p=>{
+            for(let i=0;i<21;i++)
+                p.hand.push(tiles.pop());
         });
 
-        $("#okeyDraw").onclick = drawTile;
-        $("#okeyTakeDiscard").onclick = takeDiscard;
-        $("#okeyDiscard").onclick = discardSelected;
-        $("#okeySort").onclick = () => {
-            sortTiles(p.hand,false);
-            state.selected=[];
-            render();
+        const indicator=tiles.pop();
+
+        state={
+            players,
+            deck:tiles,
+            indicator,
+            turn:0,
+            selected:[],
+            discarded:null,
+            gameOver:false
         };
-
-        $("#okeyPair").onclick = () => {
-            sortTiles(p.hand,true);
-            state.selected=[];
-            render();
-        };
-
-        $("#okeyNew").onclick = () => setup(state.playerCount);
-    }
-
-    function drawTile() {
-        if (state.turn !== 0) return;
-
-        if (state.deck.length === 0) {
-            notify("Deste bitti. Yeni el başlıyor.");
-            setup(state.playerCount);
-            return;
-        }
-
-        const t = state.deck.pop();
-        state.players[0].hand.push(t);
-        state.phase = "discard";
-        state.selected=[];
 
         render();
     }
 
-    function takeDiscard() {
-        if (state.turn !== 0) return;
-        if (!state.discard.length) {
-            notify("Alınacak atılmış taş yok.");
+    function draw(){
+
+        if(state.turn!==0)return;
+
+        if(!state.deck.length){
+            notify("🀄 Ortadaki taşlar bitti.","🀄","Oyun");
             return;
         }
 
-        const t = state.discard.pop();
-        state.players[0].hand.push(t);
-        state.phase="discard";
+        const tile=state.deck.pop();
+
+        state.players[0].hand.push(tile);
 
         render();
     }
 
-    function discardSelected() {
-        if (state.turn !== 0) return;
+    function takeDiscard(){
 
-        if (state.players[0].hand.length <= 0) return;
+        if(state.turn!==0)return;
 
-        let index = state.selected[0];
-
-        if (index == null) {
-            notify("Önce atacağın taşı seç.");
+        if(!state.discarded){
+            notify("Ortada alınacak atılmış taş yok.");
             return;
         }
 
-        const [tile] = state.players[0].hand.splice(index,1);
+        state.players[0].hand.push(state.discarded);
+        state.discarded=null;
 
-        state.discard.push(tile);
-        state.selected=[];
+        render();
+    }
+
+    function discard(index){
+
+        if(state.turn!==0)return;
+
+        if(index<0 || index>=state.players[0].hand.length)
+            return;
+
+        const tile=state.players[0].hand.splice(index,1)[0];
+
+        state.discarded=tile;
+
         state.turn=1;
-        state.phase="draw";
 
         render();
 
-        setTimeout(botTurn,700);
+        later(botTurn,650);
     }
 
-    async function botTurn() {
-        if (!state || state.turn === 0) return;
+    function botTurn(){
 
-        const bot = state.players[state.turn];
+        if(!state || state.gameOver)return;
 
-        await delay(rand(700,1300));
+        const p=state.players[state.turn];
 
-        if (state.deck.length) {
-            bot.hand.push(state.deck.pop());
+        if(state.deck.length)
+            p.hand.push(state.deck.pop());
+
+        if(p.hand.length){
+            const index=rand(0,p.hand.length-1);
+            p.discard.push(p.hand.splice(index,1)[0]);
         }
 
-        await delay(rand(500,900));
-
-        if (bot.hand.length) {
-            sortTiles(bot.hand);
-            const index = rand(0,bot.hand.length-1);
-            const [tile] = bot.hand.splice(index,1);
-            bot.discarded.push(tile);
-            state.discard.push(tile);
-        }
-
-        if (bot.hand.length === 0) {
-            gameReward(true);
-            notify(bot.name+" oyunu kazandı!");
-            return;
-        }
+        state.discarded=p.discard[p.discard.length-1]||null;
 
         state.turn++;
 
-        if (state.turn >= state.players.length) {
+        if(state.turn>=4)
             state.turn=0;
-        }
 
         render();
 
-        if (state.turn !== 0) {
-            setTimeout(botTurn,500);
+        if(state.turn!==0)
+            later(botTurn,650);
+    }
+
+    function selectTile(index){
+
+        if(state.turn!==0)return;
+
+        if(state.selected.includes(index)){
+            state.selected=state.selected.filter(i=>i!==index);
+        }else{
+            state.selected.push(index);
         }
+
+        render();
+    }
+
+    function sortNormal(){
+        state.players[0].hand=sortHand(
+            state.players[0].hand,
+            "normal"
+        );
+        state.selected=[];
+        render();
+    }
+
+    function sortPair(){
+        state.players[0].hand=sortHand(
+            state.players[0].hand,
+            "pair"
+        );
+        state.selected=[];
+        render();
+    }
+
+    function check101(){
+
+        const hand=state.players[0].hand;
+
+        let total=0;
+
+        hand.forEach(t=>{
+            if(!t.joker)
+                total+=t.number;
+        });
+
+        if(hand.length<=1){
+            gameReward(true);
+            notify(
+                "🎉 Elini bitirdin!",
+                "🀄",
+                "101 Okey"
+            );
+            return;
+        }
+
+        notify(
+            `Elindeki taşların toplam değeri yaklaşık ${total}. Gerçek açılış için geçerli perleri oluşturmalısın.`,
+            "🀄",
+            "101 Okey"
+        );
+    }
+
+    function render(){
+
+        const p=state.players[0];
+
+        const handHTML=p.hand.map((t,i)=>{
+
+            const selected=state.selected.includes(i);
+
+            return `
+                <button
+                    class="okey-tile"
+                    data-idx="${i}"
+                    style="
+                        width:42px;
+                        height:58px;
+                        min-width:42px;
+                        border-radius:7px;
+                        border:2px solid ${selected?"#ffd166":"#ddd"};
+                        background:#fff;
+                        color:${tileColor(t)};
+                        font-size:20px;
+                        font-weight:900;
+                        box-shadow:${selected?"0 0 12px #ffd166":"0 2px 5px #0005"};
+                        transform:${selected?"translateY(-8px)":"none"};
+                        cursor:pointer;
+                    "
+                >
+                    ${tileText(t)}
+                    ${
+                        !t.joker
+                        ?`<small style="
+                            display:block;
+                            font-size:8px;
+                            opacity:.7;
+                        ">${colors[t.color]}</small>`
+                        :""
+                    }
+                </button>
+            `;
+        }).join("");
+
+        openGameModal("🀄 101 Okey",`
+
+            <div class="game-shell">
+
+                <div class="game-toolbar">
+
+                    <button
+                        class="game-btn primary"
+                        id="okeyDraw"
+                    >
+                        ⬇️ Taş Çek
+                    </button>
+
+                    <button
+                        class="game-btn"
+                        id="okeyTake"
+                    >
+                        ↩️ Atılanı Al
+                    </button>
+
+                    <button
+                        class="game-btn"
+                        id="okeySort"
+                    >
+                        🔢 Taş Diz
+                    </button>
+
+                    <button
+                        class="game-btn"
+                        id="okeyPair"
+                    >
+                        🧩 Çift Diz
+                    </button>
+
+                    <button
+                        class="game-btn gold"
+                        id="okeyCheck"
+                    >
+                        101 Kontrol
+                    </button>
+
+                    <button
+                        class="game-btn"
+                        id="okeyNew"
+                    >
+                        🔄 Yeni El
+                    </button>
+
+                </div>
+
+                <div class="game-status">
+                    🀄 Gösterge:
+                    <b>
+                        ${tileText(state.indicator)}
+                    </b>
+                    •
+                    ${
+                        state.turn===0
+                        ?"🎯 Sıra sende"
+                        :`Rakip ${state.turn} oynuyor...`
+                    }
+                    •
+                    Destede ${state.deck.length} taş
+                </div>
+
+                <div
+                    style="
+                        display:grid;
+                        grid-template-columns:repeat(2,1fr);
+                        gap:10px;
+                        margin-bottom:12px;
+                    "
+                >
+                    ${state.players.slice(1).map((p,i)=>`
+                        <div
+                            style="
+                                padding:10px;
+                                border-radius:12px;
+                                background:#17233d;
+                            "
+                        >
+                            🤖 ${esc(p.name)}
+                            <b>${p.hand.length}</b> taş
+                            <div style="opacity:.65;font-size:12px">
+                                ${p.discard.length
+                                    ?"Son taş: "+tileText(p.discard[p.discard.length-1])
+                                    :"Bekliyor"}
+                            </div>
+                        </div>
+                    `).join("")}
+                </div>
+
+                <div
+                    style="
+                        text-align:center;
+                        padding:12px;
+                        border-radius:15px;
+                        background:
+                        radial-gradient(circle,#315d43,#163224);
+                        margin-bottom:15px;
+                    "
+                >
+                    <div style="font-size:12px;opacity:.7">
+                        OKEY MASASI
+                    </div>
+
+                    <div style="font-size:45px;margin:8px">
+                        ${
+                            state.discarded
+                            ?tileText(state.discarded)
+                            :"🀫"
+                        }
+                    </div>
+
+                    <div style="font-size:12px;opacity:.7">
+                        Atılan taş
+                    </div>
+                </div>
+
+                <div
+                    style="
+                        display:flex;
+                        gap:5px;
+                        flex-wrap:wrap;
+                        justify-content:center;
+                        align-items:flex-end;
+                        padding:15px 5px;
+                        background:
+                        linear-gradient(
+                            #0d3b25,
+                            #092719
+                        );
+                        border-radius:18px;
+                    "
+                    id="okeyHand"
+                >
+                    ${handHTML}
+                </div>
+
+                <div
+                    style="
+                        text-align:center;
+                        margin-top:10px;
+                        opacity:.7;
+                        font-size:12px;
+                    "
+                >
+                    Taşı seç → tekrar tıklayarak seçimini kaldır.
+                    Atmak için seçtiğin taşın üzerine bas.
+                </div>
+
+            </div>
+        `);
+
+        $$("#okeyHand .okey-tile").forEach(el=>{
+            el.onclick=()=>{
+                const i=Number(el.dataset.idx);
+
+                if(state.selected.includes(i)){
+                    discard(i);
+                }else{
+                    selectTile(i);
+                }
+            };
+        });
+
+        $("#okeyDraw").onclick=draw;
+        $("#okeyTake").onclick=takeDiscard;
+        $("#okeySort").onclick=sortNormal;
+        $("#okeyPair").onclick=sortPair;
+        $("#okeyCheck").onclick=check101;
+        $("#okeyNew").onclick=start;
     }
 
     return {start};
+
 })();
 
 /* ============================================================
    TAVLA
    ============================================================ */
 
-const TavlaGame = (() => {
+const TavlaGame=(()=>{
 
-    let state;
+    let state=null;
 
-    function start() {
-        state = {
-            points:Array.from({length:24},()=>[]),
-            bar:{white:0,black:0},
-            off:{white:0,black:0},
-            turn:"white",
-            dice:[0,0],
-            used:[false,false],
-            moving:false,
-            wins:0
+    function start(){
+
+        const board=Array(24).fill(0);
+
+        board[0]=2;
+        board[11]=5;
+        board[16]=3;
+        board[18]=5;
+
+        board[23]=-2;
+        board[12]=-5;
+        board[7]=-3;
+        board[5]=-5;
+
+        state={
+            board,
+            playerBar:0,
+            botBar:0,
+            playerOff:0,
+            botOff:0,
+            dice:[],
+            used:[],
+            turn:"player",
+            rolled:false,
+            message:"Zar at."
         };
 
-        /* Gerçek başlangıç dizilimi */
-        state.points[0]=Array(2).fill("white");
-        state.points[11]=Array(5).fill("black");
-        state.points[16]=Array(3).fill("black");
-        state.points[18]=Array(5).fill("white");
+        render();
+    }
 
-        state.points[23]=Array(2).fill("black");
-        state.points[12]=Array(5).fill("white");
-        state.points[7]=Array(3).fill("white");
-        state.points[5]=Array(5).fill("black");
+    function roll(){
+
+        if(state.turn!=="player" || state.rolled)return;
+
+        const a=rand(1,6);
+        const b=rand(1,6);
+
+        state.dice=a===b
+            ?[a,a,a,a]
+            :[a,b];
+
+        state.used=[];
+        state.rolled=true;
+        state.message=`Zarlar: ${a} - ${b}`;
 
         render();
     }
 
-    function rollDice() {
-        if (state.turn !== "white" || state.moving) return;
+    function move(from){
 
-        state.dice=[
-            rand(1,6),
-            rand(1,6)
-        ];
+        if(state.turn!=="player" || !state.rolled)return;
 
-        state.used=[false,false];
+        const p=state.board[from];
 
-        if (state.dice[0]===state.dice[1]) {
-            state.used=[false,false];
-            state.extraDoubles=2;
-        } else {
-            state.extraDoubles=0;
-        }
-
-        render();
-
-        setTimeout(botTurn,1000);
-    }
-
-    function legalMove(from,to,color,distance) {
-        if (distance < 1 || distance > 6) return false;
-
-        if (state.bar[color] > 0) return false;
-
-        if (!state.points[from].length) return false;
-        if (state.points[from][state.points[from].length-1] !== color)
-            return false;
-
-        const target = state.points[to];
-
-        if (target.length >= 2 && target[0] !== color)
-            return false;
-
-        return true;
-    }
-
-    function move(from,to) {
-        if (state.turn!=="white") return;
-
-        const distance=Math.abs(to-from);
-
-        if (!legalMove(from,to,"white",distance)) {
-            notify("Bu hamle yapılamaz.");
+        if(p<=0){
+            notify("Bu hanede senin pulun yok.");
             return;
         }
 
-        const dieIndex=state.dice.findIndex(
-            (d,i)=>!state.used[i] && d===distance
-        );
+        const dice=state.dice
+            .map((d,i)=>state.used.includes(i)?null:d)
+            .filter(Boolean);
 
-        if (dieIndex<0) {
-            notify("Bu mesafede kullanılabilir zar yok.");
+        if(!dice.length){
+            endTurn();
             return;
         }
 
-        state.used[dieIndex]=true;
+        let moved=false;
 
-        const checker=state.points[from].pop();
+        for(let i=0;i<state.dice.length;i++){
 
-        if (
-            state.points[to].length===1 &&
-            state.points[to][0]==="black"
-        ) {
-            state.points[to].pop();
-            state.bar.black++;
+            if(state.used.includes(i))continue;
+
+            const d=state.dice[i];
+
+            const to=from+d;
+
+            if(to>23){
+                state.board[from]--;
+                state.playerOff++;
+                state.used.push(i);
+                moved=true;
+                break;
+            }
+
+            if(state.board[to]<-1){
+                notify("Bu hanede iki veya daha fazla rakip pulu var.");
+                continue;
+            }
+
+            if(state.board[to]===-1){
+                state.board[to]=0;
+                state.botBar++;
+            }
+
+            state.board[from]--;
+            state.board[to]++;
+            state.used.push(i);
+            moved=true;
+            break;
         }
 
-        state.points[to].push(checker);
-
-        if (state.used.every(Boolean)) {
-            state.turn="black";
-            setTimeout(botMove,700);
+        if(!moved){
+            notify("Bu zar ile geçerli hamle yok.");
+            return;
         }
+
+        if(state.playerOff>=15){
+            gameReward(true);
+            notify("🎲 Tavlayı kazandın!","🎲","Tavla");
+            start();
+            return;
+        }
+
+        if(state.used.length>=state.dice.length)
+            endTurn();
 
         render();
     }
 
-    function render() {
-        const pointHTML = state.points.map((pile,i) => `
-            <div class="point ${i>=12 ? "bottom":""}" data-point="${i}">
-                <div class="triangle"></div>
-                <div class="checkers">
-                    ${pile.map(c=>`
-                        <div class="checker ${c}"></div>
-                    `).join("")}
-                </div>
-                <small style="
-                    position:absolute;
-                    ${i>=12?"bottom":"top"}:0;
-                    color:#111;font-weight:900;
-                ">${i+1}</small>
-            </div>
-        `).join("");
+    function endTurn(){
 
-        openGameModal("⚫ Klasik Tavla",`
+        state.turn="bot";
+        state.rolled=false;
+
+        render();
+
+        later(botTurn,700);
+    }
+
+    function botTurn(){
+
+        if(state.turn!=="bot")return;
+
+        const d1=rand(1,6);
+        const d2=rand(1,6);
+        const dice=d1===d2
+            ?[d1,d1,d1,d1]
+            :[d1,d2];
+
+        for(const d of dice){
+
+            const possible=[];
+
+            state.board.forEach((v,i)=>{
+                if(v<0){
+                    const to=i-d;
+
+                    if(to>=0 && state.board[to]>-2)
+                        possible.push(i);
+                    else if(to<0)
+                        possible.push(i);
+                }
+            });
+
+            if(!possible.length)continue;
+
+            const from=possible[rand(0,possible.length-1)];
+            const to=from-d;
+
+            state.board[from]++;
+
+            if(to<0){
+                state.botOff++;
+            }else{
+                if(state.board[to]===1){
+                    state.board[to]=0;
+                    state.playerBar++;
+                }
+
+                state.board[to]--;
+            }
+        }
+
+        if(state.botOff>=15){
+            gameReward(false);
+            notify("🤖 Rakip tavlayı kazandı.","🎲","Tavla");
+            start();
+            return;
+        }
+
+        state.turn="player";
+        state.rolled=false;
+        state.dice=[];
+        state.used=[];
+
+        render();
+    }
+
+    function render(){
+
+        const points=state.board.map((v,i)=>{
+
+            let pieces="";
+
+            for(let n=0;n<Math.min(Math.abs(v),5);n++){
+                pieces+=`
+                    <div
+                        style="
+                            width:28px;
+                            height:28px;
+                            border-radius:50%;
+                            background:${v>0?"#f3e9d2":"#111"};
+                            border:2px solid ${v>0?"#8d6e63":"#ddd"};
+                            margin:2px;
+                        "
+                    ></div>
+                `;
+            }
+
+            return `
+                <button
+                    class="tavla-point"
+                    data-point="${i}"
+                    style="
+                        min-height:180px;
+                        border:0;
+                        background:
+                        linear-gradient(
+                            ${i%2
+                            ?"rgba(193,68,14,.45)"
+                            :"rgba(237,201,122,.28)"}
+                        );
+                        color:white;
+                        position:relative;
+                        display:flex;
+                        flex-direction:${i<12?"column":"column-reverse"};
+                        justify-content:${i<12?"flex-start":"flex-end"};
+                        align-items:center;
+                        cursor:pointer;
+                        border-radius:6px;
+                    "
+                >
+                    ${pieces}
+                    <span
+                        style="
+                            position:absolute;
+                            bottom:3px;
+                            font-size:10px;
+                            opacity:.5;
+                        "
+                    >${i+1}</span>
+                </button>
+            `;
+        }).join("");
+
+        openGameModal("🎲 Klasik Tavla",`
+
             <div class="game-shell">
+
                 <div class="game-toolbar">
-                    <button class="game-btn primary" id="rollDice">
+                    <button
+                        class="game-btn primary"
+                        id="rollBackgammon"
+                    >
                         🎲 ZAR AT
                     </button>
-                    <button class="game-btn gold" id="newBackgammon">
+
+                    <button
+                        class="game-btn gold"
+                        id="newBackgammon"
+                    >
                         🔄 Yeni Oyun
                     </button>
                 </div>
 
                 <div class="game-status">
-                    ${state.turn==="white"
-                        ? "🎯 Sıra sende"
-                        : "⏳ Rakip düşünüyor..."}
+                    ${
+                        state.turn==="player"
+                        ?"👤 Sıra sende"
+                        :"🤖 Rakip oynuyor..."
+                    }
+                    •
+                    ${state.message}
+                    •
+                    Sen: ${state.playerOff}/15
+                    •
+                    Rakip: ${state.botOff}/15
                 </div>
 
-                <div class="table backgammon">
-                    <div class="board-inner">
-                        <div class="bar"></div>
+                <div
+                    style="
+                        padding:10px;
+                        background:
+                        linear-gradient(
+                            90deg,
+                            #5b321e,
+                            #9b633e,
+                            #5b321e
+                        );
+                        border:8px solid #30190e;
+                        border-radius:15px;
+                    "
+                >
 
-                        ${pointHTML}
-
-                        <div class="dice-center">
-                            <div style="
-                                background:rgba(0,0,0,.55);
-                                padding:7px 12px;
-                                border-radius:10px;
-                            ">
-                                ${state.turn==="white"?"SEN":"RAKİP"}
-                            </div>
-
-                            <div class="dice">
-                                <div class="die">
-                                    ${state.dice[0] || "–"}
-                                </div>
-                                <div class="die">
-                                    ${state.dice[1] || "–"}
-                                </div>
-                            </div>
-
-                            <button class="game-btn primary" id="centerRoll">
-                                🎲 Zar At
-                            </button>
-                        </div>
+                    <div
+                        style="
+                            display:grid;
+                            grid-template-columns:repeat(12,1fr);
+                            gap:3px;
+                        "
+                    >
+                        ${points}
                     </div>
 
-                    <div style="
-                        display:flex;
-                        justify-content:space-between;
+                    <div
+                        style="
+                            display:flex;
+                            justify-content:center;
+                            gap:10px;
+                            padding:12px;
+                        "
+                    >
+                        ${
+                            state.dice.map((d,i)=>`
+                                <div
+                                    style="
+                                        width:50px;
+                                        height:50px;
+                                        background:#fff;
+                                        color:#111;
+                                        border-radius:10px;
+                                        display:flex;
+                                        align-items:center;
+                                        justify-content:center;
+                                        font-size:25px;
+                                        font-weight:900;
+                                    "
+                                >${state.used.includes(i)?"✓":d}</div>
+                            `).join("")
+                        }
+                    </div>
+
+                    <div
+                        style="
+                            display:grid;
+                            grid-template-columns:repeat(12,1fr);
+                            gap:3px;
+                            margin-top:5px;
+                        "
+                    >
+                        ${points}
+                    </div>
+
+                </div>
+
+                <div
+                    style="
+                        text-align:center;
                         margin-top:12px;
-                        font-weight:900;
-                    ">
-                        <span>⚪ Sen: ${
-                            countCheckers("white")
-                        } pul</span>
-
-                        <span>
-                            BAR ⚪ ${state.bar.white}
-                            • ⚫ ${state.bar.black}
-                        </span>
-
-                        <span>⚫ Rakip: ${
-                            countCheckers("black")
-                        } pul</span>
-                    </div>
+                        opacity:.75;
+                    "
+                >
+                    Zarları at. Sonra hareket ettirmek istediğin
+                    kendi pulunun bulunduğu haneye bas.
                 </div>
 
-                <div style="
-                    text-align:center;
-                    margin-top:12px;
-                    opacity:.8;
-                ">
-                    Bir pulun bulunduğu haneden gitmek istediğin haneye tıkla.
-                    Zar mesafesi kullanılacaktır.
-                </div>
             </div>
         `);
 
-        $("#rollDice").onclick=rollDice;
-        $("#centerRoll").onclick=rollDice;
-        $("#newBackgammon").onclick=start;
-
-        $$(".point").forEach(el => {
+        $$(".tavla-point").forEach(el=>{
             el.onclick=()=>{
-                const to=Number(el.dataset.point);
-
-                const from=state.points.findIndex(
-                    pile=>pile.length &&
-                    pile[pile.length-1]==="white"
-                );
-
-                if (from>=0) move(from,to);
+                move(Number(el.dataset.point));
             };
         });
-    }
 
-    function countCheckers(color) {
-        let n=state.off[color];
-
-        state.points.forEach(p=>{
-            p.forEach(c=>{
-                if(c===color)n++;
-            });
-        });
-
-        n+=state.bar[color];
-        return n;
-    }
-
-    async function botTurn() {
-        if (!state || state.turn!=="black") return;
-
-        await delay(800);
-
-        const moves=[];
-
-        state.points.forEach((pile,i)=>{
-            if(pile.length && pile[pile.length-1]==="black"){
-                state.dice.forEach((d,di)=>{
-                    if(!state.used[di]){
-                        const to=i-d;
-                        if(to>=0 && legalMove(i,to,"black",d)){
-                            moves.push({from:i,to,d,di});
-                        }
-                    }
-                });
-            }
-        });
-
-        if(moves.length){
-            const m=moves[rand(0,moves.length-1)];
-            state.used[m.di]=true;
-
-            const checker=state.points[m.from].pop();
-
-            if(
-                state.points[m.to].length===1 &&
-                state.points[m.to][0]==="white"
-            ){
-                state.points[m.to].pop();
-                state.bar.white++;
-            }
-
-            state.points[m.to].push(checker);
-        }
-
-        state.turn="white";
-        state.dice=[0,0];
-        state.used=[false,false];
-
-        render();
+        $("#rollBackgammon").onclick=roll;
+        $("#newBackgammon").onclick=start;
     }
 
     return {start};
+
 })();
 
 /* ============================================================
    TÜRK DAMASI
    ============================================================ */
 
-const DamaGame = (() => {
+const DamaGame=(()=>{
 
-    let board;
-    let selected=null;
-    let turn="white";
+    let state=null;
 
-    function start() {
-        board=[];
+    function start(){
 
-        for(let r=0;r<8;r++){
-            board[r]=Array(8).fill(null);
-        }
+        const board=Array.from({length:8},()=>Array(8).fill(0));
 
-        /* Türk daması başlangıç */
-        for(let c=0;c<8;c++){
-            board[0][c]="black";
-            board[1][c]="black";
-            board[2][c]="black";
+        for(let r=0;r<2;r++)
+            for(let c=0;c<8;c++)
+                board[r][c]=-1;
 
-            board[5][c]="white";
-            board[6][c]="white";
-            board[7][c]="white";
-        }
+        for(let r=5;r<8;r++)
+            for(let c=0;c<8;c++)
+                board[r][c]=1;
 
-        selected=null;
-        turn="white";
+        state={
+            board,
+            turn:1,
+            selected:null,
+            chain:false,
+            winner:null
+        };
 
         render();
     }
 
+    function directions(piece){
+
+        if(Math.abs(piece)===2)
+            return [
+                [-1,-1],[-1,0],[-1,1],
+                [0,-1],[0,1],
+                [1,-1],[1,0],[1,1]
+            ];
+
+        return piece===1
+            ?[[-1,0],[0,-1],[0,1]]
+            :[[1,0],[0,-1],[0,1]];
+    }
+
     function inside(r,c){
-        return r>=0 && r<8 && c>=0 && c<8;
+        return r>=0&&r<8&&c>=0&&c<8;
     }
 
-    function getMoves(r,c){
-        const piece=board[r][c];
-        if(!piece)return [];
+    function capturesFor(piece,r,c){
 
-        const color=piece.color;
-        const king=piece.king;
-
-        const dirs=[
-            [1,0],[-1,0],[0,1],[0,-1]
-        ];
-
-        const moves=[];
-
-        if(!king){
-            const dr=color==="white" ? -1 : 1;
-
-            for(const dc of [-1,0,1]){
-                const nr=r+dr,nc=c+dc;
-
-                if(inside(nr,nc) && !board[nr][nc]){
-                    moves.push({
-                        r:nr,c:nc,
-                        capture:null
-                    });
-                }
-            }
-
-            for(const [dr2,dc2] of dirs){
-                const mr=r+dr2,mc=c+dc2;
-                const nr=r+dr2*2,nc=c+dc2*2;
-
-                if(
-                    inside(nr,nc) &&
-                    board[mr]?.[mc] &&
-                    board[mr][mc].color!==color &&
-                    !board[nr][nc]
-                ){
-                    moves.push({
-                        r:nr,c:nc,
-                        capture:{r:mr,c:mc}
-                    });
-                }
-            }
-        } else {
-            for(const [dr,dc] of dirs){
-                let nr=r+dr,nc=c+dc;
-                let enemy=null;
-
-                while(inside(nr,nc)){
-                    if(!board[nr][nc]){
-                        moves.push({
-                            r:nr,c:nc,
-                            capture:enemy
-                        });
-                    }else{
-                        if(board[nr][nc].color===color)break;
-
-                        if(enemy)break;
-
-                        enemy={r:nr,c:nc};
-                    }
-
-                    nr+=dr;
-                    nc+=dc;
-                }
-            }
-        }
-
-        return moves;
-    }
-
-    function allCaptures(color){
         const result=[];
 
-        for(let r=0;r<8;r++){
-            for(let c=0;c<8;c++){
-                if(board[r][c]?.color===color){
-                    getMoves(r,c)
-                        .filter(m=>m.capture)
-                        .forEach(m=>{
-                            result.push({from:{r,c},move:m});
-                        });
-                }
+        directions(piece).forEach(([dr,dc])=>{
+
+            const mr=r+dr;
+            const mc=c+dc;
+            const lr=r+dr*2;
+            const lc=c+dc*2;
+
+            if(
+                inside(lr,lc)&&
+                state.board[mr]?.[mc] &&
+                Math.sign(state.board[mr][mc])!==Math.sign(piece)&&
+                state.board[lr][lc]===0
+            ){
+                result.push({
+                    r:lr,
+                    c:lc,
+                    mr,
+                    mc
+                });
             }
-        }
+        });
 
         return result;
     }
 
-    function clickCell(r,c){
-        if(turn!=="white")return;
+    function hasCapture(player){
 
-        if(selected){
-            const moves=getMoves(selected.r,selected.c);
+        for(let r=0;r<8;r++){
+            for(let c=0;c<8;c++){
 
-            const move=moves.find(m=>m.r===r&&m.c===c);
+                if(Math.sign(state.board[r][c])!==player)
+                    continue;
 
-            if(move){
-                executeMove(selected,move);
-                return;
+                if(capturesFor(state.board[r][c],r,c).length)
+                    return true;
             }
         }
 
-        if(board[r][c]?.color==="white"){
-            const forced=allCaptures("white");
-
-            if(
-                forced.length &&
-                !forced.some(x=>x.from.r===r&&x.from.c===c)
-            ){
-                notify("⚠️ Taş yemen zorunlu.");
-                return;
-            }
-
-            selected={r,c};
-            render();
-        }
+        return false;
     }
 
-    function executeMove(from,move){
-        const piece=board[from.r][from.c];
+    function select(r,c){
 
-        board[move.r][move.c]=piece;
-        board[from.r][from.c]=null;
+        if(state.turn!==1)return;
 
-        if(move.capture){
-            board[move.capture.r][move.capture.c]=null;
-        }
+        const piece=state.board[r][c];
 
-        if(
-            piece.color==="white" &&
-            move.r===0
-        ){
-            piece.king=true;
-        }
+        if(state.selected){
 
-        selected=null;
+            const sr=state.selected.r;
+            const sc=state.selected.c;
+            const p=state.board[sr][sc];
 
-        /* Zincir yeme */
-        if(move.capture){
-            const next=getMoves(move.r,move.c)
-                .filter(m=>m.capture);
+            const captures=capturesFor(p,sr,sc);
 
-            if(next.length){
-                selected={r:move.r,c:move.c};
+            const cap=captures.find(x=>x.r===r&&x.c===c);
+
+            if(cap){
+
+                state.board[r][c]=p;
+                state.board[sr][sc]=0;
+                state.board[cap.mr][cap.mc]=0;
+
+                if(r===0&&p===1)
+                    state.board[r][c]=2;
+
+                if(capturesFor(state.board[r][c],r,c).length){
+                    state.selected={r,c};
+                    state.chain=true;
+                    render();
+                    return;
+                }
+
+                state.selected=null;
+                state.chain=false;
+                state.turn=-1;
+
                 render();
-                notify("🔥 Devam eden yeme var!");
+
+                later(botTurn,650);
                 return;
+            }
+
+            if(!state.chain){
+                state.selected=null;
+                render();
+            }
+
+            return;
+        }
+
+        if(Math.sign(piece)!==1)return;
+
+        if(hasCapture(1) && !capturesFor(piece,r,c).length){
+            notify("⚫ Alma zorunlu. Başka bir taşla alma yapmalısın.");
+            return;
+        }
+
+        state.selected={r,c};
+        render();
+    }
+
+    function botTurn(){
+
+        if(state.turn!==-1)return;
+
+        const pieces=[];
+
+        for(let r=0;r<8;r++){
+            for(let c=0;c<8;c++){
+
+                if(Math.sign(state.board[r][c])!==-1)
+                    continue;
+
+                const caps=capturesFor(state.board[r][c],r,c);
+
+                if(caps.length)
+                    pieces.push({r,c,caps});
             }
         }
 
-        turn="black";
-        render();
+        let chosen=null;
 
-        setTimeout(botMove,700);
-    }
+        if(pieces.length){
 
-    function botMove(){
-        if(turn!=="black")return;
+            chosen=pieces[rand(0,pieces.length-1)];
 
-        const captures=allCaptures("black");
+            const cap=chosen.caps[0];
 
-        let chosen;
+            const p=state.board[chosen.r][chosen.c];
 
-        if(captures.length){
-            chosen=captures[rand(0,captures.length-1)];
+            state.board[cap.r][cap.c]=p;
+            state.board[chosen.r][chosen.c]=0;
+            state.board[cap.mr][cap.mc]=0;
+
         }else{
+
             const moves=[];
 
             for(let r=0;r<8;r++){
                 for(let c=0;c<8;c++){
-                    if(board[r][c]?.color==="black"){
-                        getMoves(r,c)
-                            .filter(m=>!m.capture)
-                            .forEach(move=>{
-                                moves.push({
-                                    from:{r,c},
-                                    move
-                                });
+
+                    const p=state.board[r][c];
+
+                    if(Math.sign(p)!==-1)continue;
+
+                    directions(p).forEach(([dr,dc])=>{
+                        const nr=r+dr;
+                        const nc=c+dc;
+
+                        if(inside(nr,nc)&&state.board[nr][nc]===0){
+                            moves.push({
+                                r,c,nr,nc
                             });
-                    }
+                        }
+                    });
                 }
             }
 
             if(moves.length){
-                chosen=moves[rand(0,moves.length-1)];
+
+                const m=moves[rand(0,moves.length-1)];
+                const p=state.board[m.r][m.c];
+
+                state.board[m.nr][m.nc]=p;
+                state.board[m.r][m.c]=0;
+
+                if(m.nr===7&&p===-1)
+                    state.board[m.nr][m.nc]=-2;
             }
         }
 
-        if(!chosen){
-            gameReward(true);
-            notify("🏆 Dama'yı kazandın!");
+        if(checkWinner()){
+            render();
             return;
         }
 
-        executeBot(chosen);
-
-        turn="white";
+        state.turn=1;
         render();
     }
 
-    function executeBot(x){
-        const piece=board[x.from.r][x.from.c];
+    function checkWinner(){
 
-        board[x.move.r][x.move.c]=piece;
-        board[x.from.r][x.from.c]=null;
+        const playerPieces=state.board.flat().filter(x=>x>0).length;
+        const botPieces=state.board.flat().filter(x=>x<0).length;
 
-        if(x.move.capture){
-            board[x.move.capture.r][x.move.capture.c]=null;
+        if(playerPieces===0){
+            gameReward(false);
+            notify("🤖 Rakip kazandı.","⚫","Dama");
+            return true;
         }
 
-        if(
-            piece.color==="black" &&
-            x.move.r===7
-        ){
-            piece.king=true;
+        if(botPieces===0){
+            gameReward(true);
+            notify("🏆 Damayı kazandın!","⚫","Dama");
+            return true;
         }
+
+        return false;
     }
 
     function render(){
-        const cells=[];
 
-        for(let r=0;r<8;r++){
-            for(let c=0;c<8;c++){
-                const p=board[r][c];
+        openGameModal("⚫ Türk Daması",`
 
-                cells.push(`
-                    <div
-                        class="dama-cell ${(r+c)%2?"dark":"light"}
-                        data-r="${r}"
-                        data-c="${c}"
-                        ${selected&&selected.r===r&&selected.c===c
-                            ? 'style="outline:5px solid #ffd166;outline-offset:-5px"'
-                            : ""}
-                    >
-                        ${
-                            p
-                            ? `<div class="dama-piece ${p.color} ${p.king?"king":""}"></div>`
-                            : ""
-                        }
-                    </div>
-                `);
-            }
-        }
-
-        openGameModal("🔴 Türk Daması",`
             <div class="game-shell">
+
                 <div class="game-toolbar">
-                    <button class="game-btn gold" id="newDama">
+                    <button
+                        class="game-btn gold"
+                        id="newDama"
+                    >
                         🔄 Yeni Oyun
                     </button>
                 </div>
 
                 <div class="game-status">
-                    ${turn==="white"
-                        ?"🎯 Sıra sende"
-                        :"⏳ Rakip oynuyor..."}
+                    ${
+                        state.turn===1
+                        ?"👤 Sıra sende"
+                        :"🤖 Rakip oynuyor..."
+                    }
+                    •
+                    Alma zorunludur.
                 </div>
 
-                <div class="dama-board">
-                    ${cells.join("")}
+                <div
+                    style="
+                        width:min(92vw,600px);
+                        margin:auto;
+                        display:grid;
+                        grid-template-columns:repeat(8,1fr);
+                        border:6px solid #3b2415;
+                    "
+                >
+                    ${state.board.flatMap((row,r)=>
+                        row.map((v,c)=>{
+
+                            const selected=
+                                state.selected?.r===r &&
+                                state.selected?.c===c;
+
+                            return `
+                                <button
+                                    data-r="${r}"
+                                    data-c="${c}"
+                                    style="
+                                        aspect-ratio:1;
+                                        border:0;
+                                        background:
+                                        ${(r+c)%2
+                                            ?"#b88755"
+                                            :"#f0d9b5"};
+                                        display:flex;
+                                        align-items:center;
+                                        justify-content:center;
+                                        cursor:pointer;
+                                        box-shadow:
+                                        ${selected
+                                            ?"inset 0 0 0 4px #ffd166"
+                                            :"none"};
+                                    "
+                                >
+                                    ${
+                                        v
+                                        ?`
+                                            <span
+                                                style="
+                                                    width:72%;
+                                                    height:72%;
+                                                    border-radius:50%;
+                                                    display:block;
+                                                    background:
+                                                    ${v>0
+                                                        ?"radial-gradient(circle at 35% 30%,#555,#050505)"
+                                                        :"radial-gradient(circle at 35% 30%,#eee,#aaa)"};
+                                                    border:
+                                                    3px solid ${v>0?"#000":"#fff"};
+                                                    box-shadow:
+                                                    0 4px 7px #0008;
+                                                "
+                                            >
+                                                ${Math.abs(v)===2?"♛":""}
+                                            </span>
+                                        `
+                                        :""
+                                    }
+                                </button>
+                            `;
+                        })
+                    ).join("")}
                 </div>
 
-                <div style="
-                    text-align:center;
-                    margin-top:15px;
-                    font-weight:800;
-                ">
-                    Rakip taşı varsa yeme zorunludur.
-                    Taşın son sıraya ulaşırsa DAMA olur.
-                </div>
             </div>
         `);
 
-        $$(".dama-cell").forEach(cell=>{
-            cell.onclick=()=>clickCell(
-                Number(cell.dataset.r),
-                Number(cell.dataset.c)
-            );
+        $$("[data-r][data-c]").forEach(el=>{
+            el.onclick=()=>{
+                select(
+                    Number(el.dataset.r),
+                    Number(el.dataset.c)
+                );
+            };
         });
 
         $("#newDama").onclick=start;
     }
 
     return {start};
+
 })();
 
 /* ============================================================
    BATAK
    ============================================================ */
 
-const BatakGame = (() => {
+const BatakGame=(()=>{
 
-    let state;
+    let state=null;
 
-    const suits=[
-        {s:"♠",name:"Maça",red:false},
-        {s:"♥",name:"Kupa",red:true},
-        {s:"♦",name:"Karo",red:true},
-        {s:"♣",name:"Sinek",red:false}
-    ];
+    const suits=["♠","♥","♦","♣"];
 
-    function createDeck(){
+    const suitNames={
+        "♠":"Maça",
+        "♥":"Kupa",
+        "♦":"Karo",
+        "♣":"Sinek"
+    };
+
+    function deck(){
+
         const d=[];
 
         for(const suit of suits){
             for(let rank=2;rank<=14;rank++){
                 d.push({
-                    suit:suit.s,
-                    suitName:suit.name,
+                    suit,
                     rank,
-                    red:suit.red
+                    red:suit==="♥"||suit==="♦"
                 });
             }
         }
@@ -1932,77 +1730,53 @@ const BatakGame = (() => {
 
     function cardName(c){
         const names={
-            14:"A",
-            13:"K",
+            11:"J",
             12:"Q",
-            11:"J"
+            13:"K",
+            14:"A"
         };
 
-        return (names[c.rank]||c.rank)+c.suit;
+        return `${names[c.rank]||c.rank}${c.suit}`;
     }
 
     function start(){
+
+        const d=deck();
+
+        const players=[
+            {name:"Sen",hand:[],tricks:0,score:0},
+            {name:"Ali",hand:[],tricks:0,score:0},
+            {name:"Ayşe",hand:[],tricks:0,score:0},
+            {name:"Mehmet",hand:[],tricks:0,score:0}
+        ];
+
+        players.forEach(p=>{
+            for(let i=0;i<13;i++)
+                p.hand.push(d.pop());
+        });
+
         state={
-            players:[
-                {name:"Sen",human:true,hand:[],score:0,tricks:0},
-                {name:"Rakip 2",human:false,hand:[],score:0,tricks:0},
-                {name:"Rakip 3",human:false,hand:[],score:0,tricks:0},
-                {name:"Rakip 4",human:false,hand:[],score:0,tricks:0}
-            ],
-            deck:createDeck(),
-            trump:null,
+            players,
+            trump:suits[rand(0,3)],
             turn:0,
             trick:[],
-            leadSuit:null,
-            handNo:1
+            leadSuit:null
         };
-
-        deal();
-    }
-
-    function deal(){
-        state.deck=createDeck();
-
-        state.players.forEach(p=>{
-            p.hand=[];
-            p.tricks=0;
-        });
-
-        for(let i=0;i<52;i++){
-            state.players[i%4].hand.push(state.deck[i]);
-        }
-
-        state.players.forEach(p=>{
-            p.hand.sort((a,b)=>{
-                if(a.suit!==b.suit)
-                    return a.suit.localeCompare(b.suit);
-
-                return b.rank-a.rank;
-            });
-        });
-
-        /* İlk oyuncu rastgele koz belirler */
-        state.trump=suits[rand(0,3)].s;
-        state.turn=0;
-        state.trick=[];
-        state.leadSuit=null;
 
         render();
     }
 
     function canPlay(card,p){
+
         if(!state.leadSuit)return true;
 
-        const sameSuit=p.hand.filter(c=>c.suit===state.leadSuit);
+        if(card.suit===state.leadSuit)return true;
 
-        if(sameSuit.length){
-            return card.suit===state.leadSuit;
-        }
-
-        return true;
+        return !p.hand.some(c=>c.suit===state.leadSuit);
     }
 
     function playHuman(index){
+
         if(state.turn!==0)return;
 
         const p=state.players[0];
@@ -2011,7 +1785,11 @@ const BatakGame = (() => {
         if(!card)return;
 
         if(!canPlay(card,p)){
-            notify("♠ Elinde o renk var. O rengi oynamalısın.");
+            notify(
+                "Elinde o renk var. O rengi oynamalısın.",
+                "🂡",
+                "Batak"
+            );
             return;
         }
 
@@ -2026,27 +1804,35 @@ const BatakGame = (() => {
             state.leadSuit=card.suit;
 
         if(state.trick.length===4){
+
             render();
-            setTimeout(resolveTrick,800);
+            later(resolveTrick,700);
+
         }else{
+
             state.turn=1;
             render();
-            setTimeout(botPlay,700);
+            later(botPlay,600);
         }
     }
 
     function botPlay(){
+
         if(state.turn===0)return;
 
         const p=state.players[state.turn];
 
         let options=p.hand.filter(c=>canPlay(c,p));
 
-        if(!options.length)options=[...p.hand];
+        if(!options.length)
+            options=[...p.hand];
 
         const card=options[rand(0,options.length-1)];
 
-        p.hand.splice(p.hand.indexOf(card),1);
+        p.hand.splice(
+            p.hand.indexOf(card),
+            1
+        );
 
         state.trick.push({
             player:state.turn,
@@ -2057,25 +1843,29 @@ const BatakGame = (() => {
             state.leadSuit=card.suit;
 
         if(state.trick.length===4){
+
             render();
-            setTimeout(resolveTrick,700);
+            later(resolveTrick,700);
             return;
         }
 
         state.turn++;
 
-        if(state.turn>=4)state.turn=0;
+        if(state.turn>=4)
+            state.turn=0;
 
         render();
 
         if(state.turn!==0)
-            setTimeout(botPlay,650);
+            later(botPlay,550);
     }
 
     function winner(){
+
         let best=null;
 
         for(const item of state.trick){
+
             const c=item.card;
 
             if(!best){
@@ -2085,7 +1875,10 @@ const BatakGame = (() => {
 
             const b=best.card;
 
-            if(c.suit===state.trump && b.suit!==state.trump){
+            if(
+                c.suit===state.trump &&
+                b.suit!==state.trump
+            ){
                 best=item;
                 continue;
             }
@@ -2102,6 +1895,7 @@ const BatakGame = (() => {
     }
 
     function resolveTrick(){
+
         const w=winner();
 
         state.players[w].tricks++;
@@ -2118,45 +1912,80 @@ const BatakGame = (() => {
         render();
 
         if(state.turn!==0)
-            setTimeout(botPlay,700);
+            later(botPlay,600);
     }
 
     function finishHand(){
+
         state.players.forEach(p=>{
             p.score+=p.tricks;
         });
 
-        if(state.players[0].tricks>=state.players[1].tricks &&
-           state.players[0].tricks>=state.players[2].tricks &&
-           state.players[0].tricks>=state.players[3].tricks){
-            gameReward(true);
-        }else{
-            gameReward(false);
-        }
+        const won=
+            state.players[0].tricks>=
+            Math.max(
+                state.players[1].tricks,
+                state.players[2].tricks,
+                state.players[3].tricks
+            );
+
+        gameReward(won);
 
         notify(
-            `El bitti. Sen ${state.players[0].tricks} el aldın.`
+            `El bitti. Sen ${state.players[0].tricks} el aldın.`,
+            won?"🏆":"🂡",
+            won?"Batak - Kazandın":"Batak"
         );
 
         render(true);
     }
 
     function cardHTML(card,back=false,index=null){
+
         if(back){
-            return `<div class="playing-card card-back">?</div>`;
+            return `
+                <div
+                    style="
+                        width:42px;
+                        height:58px;
+                        border-radius:6px;
+                        background:
+                        repeating-linear-gradient(
+                            45deg,
+                            #263b75,
+                            #263b75 5px,
+                            #17244b 5px,
+                            #17244b 10px
+                        );
+                        border:2px solid #fff;
+                    "
+                ></div>
+            `;
         }
 
         return `
-            <div
+            <button
                 class="playing-card ${card.red?"red":""}"
                 ${index!==null?`data-card="${index}"`:""}
+                style="
+                    width:45px;
+                    height:62px;
+                    border-radius:7px;
+                    background:#fff;
+                    color:${card.red?"#d62828":"#111"};
+                    border:2px solid #ddd;
+                    font-weight:900;
+                    font-size:17px;
+                    cursor:pointer;
+                "
             >
                 ${cardName(card)}
-            </div>
+            </button>
         `;
     }
 
     function render(finished=false){
+
         const p=state.players[0];
 
         const trickHTML=state.trick.map(item=>`
@@ -2169,96 +1998,180 @@ const BatakGame = (() => {
         `).join("");
 
         openGameModal("🂡 Batak",`
+
             <div class="game-shell">
+
                 <div class="game-toolbar">
-                    <button class="game-btn gold" id="newBatak">
+
+                    <button
+                        class="game-btn gold"
+                        id="newBatak"
+                    >
                         🔄 Yeni El
                     </button>
+
                 </div>
 
                 <div class="game-status">
-                    ${finished
+
+                    ${
+                        finished
                         ?"🏁 El tamamlandı."
-                        :`🎴 Koz: <b>${state.trump}</b> • ${
-                            state.turn===0
-                            ?"Sıra sende"
-                            :"Rakip oynuyor..."
-                        }`}
+                        :`
+                            🎴 Koz:
+                            <b>${state.trump}</b>
+                            (${suitNames[state.trump]})
+                            •
+                            ${
+                                state.turn===0
+                                ?"🎯 Sıra sende"
+                                :"Rakip oynuyor..."
+                            }
+                        `
+                    }
+
                 </div>
 
-                <div class="table card-table">
-                    <div class="seat">
-                        Rakip 3 • ${state.players[2].tricks} el
-                        <div class="card-hand">
-                            ${Array.from({
-                                length:state.players[2].hand.length
-                            },()=>cardHTML(null,true)).join("")}
+                <div
+                    style="
+                        display:grid;
+                        grid-template-columns:1fr 1fr;
+                        gap:10px;
+                        padding:12px;
+                        background:
+                        radial-gradient(circle,#276749,#123524);
+                        border-radius:18px;
+                    "
+                >
+
+                    <div
+                        style="
+                            grid-column:1/-1;
+                            text-align:center;
+                        "
+                    >
+                        <b>Rakip 3</b>
+                        • ${state.players[2].tricks} el
+
+                        <div
+                            style="
+                                display:flex;
+                                justify-content:center;
+                                margin-top:5px;
+                            "
+                        >
+                            ${Array.from(
+                                {length:state.players[2].hand.length},
+                                ()=>cardHTML(null,true)
+                            ).join("")}
                         </div>
                     </div>
 
-                    <div class="seat" style="margin-top:10px">
-                        Rakip 2 • ${state.players[1].tricks} el
-                        <div class="card-hand">
-                            ${Array.from({
-                                length:Math.min(
-                                    state.players[1].hand.length,8
-                                )
-                            },()=>cardHTML(null,true)).join("")}
+                    <div>
+                        <b>Rakip 2</b>
+                        • ${state.players[1].tricks} el
+
+                        <div
+                            style="
+                                display:flex;
+                                flex-wrap:wrap;
+                                margin-top:5px;
+                            "
+                        >
+                            ${Array.from(
+                                {length:Math.min(state.players[1].hand.length,8)},
+                                ()=>cardHTML(null,true)
+                            ).join("")}
                         </div>
                     </div>
 
-                    <div class="trick-area">
-                        ${trickHTML||"<span style='opacity:.6'>El bekliyor...</span>"}
+                    <div>
+                        <b>Rakip 4</b>
+                        • ${state.players[3].tricks} el
                     </div>
 
-                    <div class="seat">
-                        Rakip 4 • ${state.players[3].tricks} el
+                    <div
+                        style="
+                            grid-column:1/-1;
+                            min-height:110px;
+                            display:flex;
+                            align-items:center;
+                            justify-content:center;
+                            gap:15px;
+                            flex-wrap:wrap;
+                            padding:15px;
+                            border-radius:14px;
+                            background:#0b2419;
+                        "
+                    >
+                        ${
+                            trickHTML ||
+                            "<span style='opacity:.6'>İlk kartı sen oynayabilirsin.</span>"
+                        }
                     </div>
 
-                    <div style="margin-top:15px">
-                        <div style="text-align:center;font-weight:900">
-                            👤 Sen • ${p.tricks} el
-                        </div>
-
-                        <div class="card-hand" id="batakHand">
-                            ${p.hand.map((c,i)=>cardHTML(c,false,i)).join("")}
-                        </div>
-                    </div>
                 </div>
+
+                <div
+                    style="
+                        margin-top:15px;
+                        text-align:center;
+                        font-weight:900;
+                    "
+                >
+                    👤 Sen • ${p.tricks} el
+                </div>
+
+                <div
+                    id="batakHand"
+                    style="
+                        display:flex;
+                        gap:5px;
+                        flex-wrap:wrap;
+                        justify-content:center;
+                        padding:15px 5px;
+                    "
+                >
+                    ${p.hand.map((c,i)=>
+                        cardHTML(c,false,i)
+                    ).join("")}
+                </div>
+
             </div>
         `);
 
-        $$("#batakHand .playing-card").forEach(el=>{
-            el.onclick=()=>playHuman(Number(el.dataset.card));
+        $$("#batakHand [data-card]").forEach(el=>{
+            el.onclick=()=>{
+                playHuman(
+                    Number(el.dataset.card)
+                );
+            };
         });
 
         $("#newBatak").onclick=start;
     }
 
     return {start};
+
 })();
 
 /* ============================================================
    BİLARDO
    ============================================================ */
 
-const BilardoGame = (() => {
+const BilardoGame=(()=>{
 
-    let state;
+    let state=null;
 
     function start(){
+
         state={
             balls:[],
-            cue:{
-                x:18,
-                y:50
-            },
             angle:0,
             power:35,
             turn:"player",
-            score:0,
             shots:0,
-            ballsLeft:15
+            sunk:0
         };
 
         createBalls();
@@ -2266,6 +2179,7 @@ const BilardoGame = (() => {
     }
 
     function createBalls(){
+
         state.balls=[
             {
                 id:0,
@@ -2279,24 +2193,28 @@ const BilardoGame = (() => {
         ];
 
         let id=1;
-        const startX=72;
-        const startY=50;
 
         for(let row=0;row<5;row++){
+
             for(let col=0;col<=row;col++){
+
                 state.balls.push({
                     id:id++,
-                    x:startX+row*4,
-                    y:startY+(col-row/2)*4,
+                    x:72+row*4,
+                    y:50+(col-row/2)*4,
                     vx:0,
                     vy:0,
-                    color:id%2?"#d33":"#2464d6"
+                    color:
+                        id%2
+                        ?"#e63946"
+                        :"#2464d6"
                 });
             }
         }
     }
 
     function shoot(){
+
         if(state.turn!=="player")return;
 
         const cue=state.balls.find(b=>b.cue);
@@ -2305,21 +2223,30 @@ const BilardoGame = (() => {
 
         const rad=state.angle*Math.PI/180;
 
-        cue.vx=Math.cos(rad)*(state.power/10);
-        cue.vy=Math.sin(rad)*(state.power/10);
+        cue.vx=
+            Math.cos(rad)*
+            (state.power/10);
+
+        cue.vy=
+            Math.sin(rad)*
+            (state.power/10);
 
         state.shots++;
         state.turn="moving";
 
         render();
 
+        clearGameTimers();
+
         gameTimer=setInterval(physics,30);
     }
 
     function physics(){
+
         let moving=false;
 
         for(const b of state.balls){
+
             b.x+=b.vx;
             b.y+=b.vy;
 
@@ -2346,13 +2273,25 @@ const BilardoGame = (() => {
                 b.vy*=-1;
             }
 
-            if(Math.abs(b.vx)>.03 || Math.abs(b.vy)>.03)
+            if(
+                Math.abs(b.vx)>.03 ||
+                Math.abs(b.vy)>.03
+            )
                 moving=true;
         }
 
-        /* Basit top çarpışması */
-        for(let i=0;i<state.balls.length;i++){
-            for(let j=i+1;j<state.balls.length;j++){
+        for(
+            let i=0;
+            i<state.balls.length;
+            i++
+        ){
+
+            for(
+                let j=i+1;
+                j<state.balls.length;
+                j++
+            ){
+
                 const a=state.balls[i];
                 const b=state.balls[j];
 
@@ -2361,11 +2300,17 @@ const BilardoGame = (() => {
                 const dist=Math.sqrt(dx*dx+dy*dy);
 
                 if(dist<3 && dist>.01){
+
                     const nx=dx/dist;
                     const ny=dy/dist;
 
-                    const av=a.vx*nx+a.vy*ny;
-                    const bv=b.vx*nx+b.vy*ny;
+                    const av=
+                        a.vx*nx+
+                        a.vy*ny;
+
+                    const bv=
+                        b.vx*nx+
+                        b.vy*ny;
 
                     a.vx+=(bv-av)*nx;
                     a.vy+=(bv-av)*ny;
@@ -2379,71 +2324,194 @@ const BilardoGame = (() => {
         render();
 
         if(!moving){
+
             clearInterval(gameTimer);
+            gameTimer=null;
+
             state.turn="player";
 
-            if(state.balls.filter(b=>!b.cue).length===0){
+            const objectBalls=
+                state.balls.filter(b=>!b.cue);
+
+            if(objectBalls.length===0){
                 gameReward(true);
-                notify("🎱 Muhteşem! Masayı temizledin.");
+                notify(
+                    "🎱 Masayı temizledin!",
+                    "🎱",
+                    "Bilardo"
+                );
                 createBalls();
             }
         }
     }
 
     function render(){
+
         const balls=state.balls.map(b=>`
             <div
-                class="pool-ball ${b.cue?"cue-ball":""}"
                 style="
+                    position:absolute;
                     left:${b.x}%;
                     top:${b.y}%;
                     transform:translate(-50%,-50%);
-                    ${b.color?`background:${b.color}`:""}
+                    width:25px;
+                    height:25px;
+                    border-radius:50%;
+                    background:${b.color};
+                    border:2px solid #fff8;
+                    box-shadow:0 3px 6px #0009;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                    font-size:9px;
+                    font-weight:900;
+                    color:${b.cue?"#111":"#fff"};
                 "
-            >${b.cue?"":b.id}</div>
+            >
+                ${b.cue?"":b.id}
+            </div>
         `).join("");
 
         openGameModal("🎱 Bilardo",`
+
             <div class="game-shell">
+
                 <div class="game-toolbar">
-                    <button class="game-btn" id="angleMinus">↶ Açı -</button>
-                    <button class="game-btn" id="anglePlus">↷ Açı +</button>
-                    <button class="game-btn" id="powerMinus">− Güç</button>
-                    <button class="game-btn" id="powerPlus">+ Güç</button>
-                    <button class="game-btn primary" id="shootPool">
+
+                    <button
+                        class="game-btn"
+                        id="angleMinus"
+                    >
+                        ↶ Açı -
+                    </button>
+
+                    <button
+                        class="game-btn"
+                        id="anglePlus"
+                    >
+                        ↷ Açı +
+                    </button>
+
+                    <button
+                        class="game-btn"
+                        id="powerMinus"
+                    >
+                        − Güç
+                    </button>
+
+                    <button
+                        class="game-btn"
+                        id="powerPlus"
+                    >
+                        + Güç
+                    </button>
+
+                    <button
+                        class="game-btn primary"
+                        id="shootPool"
+                    >
                         🎯 VUR
                     </button>
-                    <button class="game-btn gold" id="newPool">
-                        🔄 Yeni Oyun
+
+                    <button
+                        class="game-btn gold"
+                        id="newPool"
+                    >
+                        🔄 Yeni
                     </button>
+
                 </div>
 
                 <div class="game-status">
                     Atış: ${state.shots}
                     • Güç: ${Math.round(state.power)}
                     • Açı: ${Math.round(state.angle)}°
-                    • ${state.turn==="player"?"Sıra sende":"Toplar hareket ediyor..."}
+                    •
+                    ${
+                        state.turn==="player"
+                        ?"Sıra sende"
+                        :"Toplar hareket ediyor..."
+                    }
                 </div>
 
-                <div class="pool-table">
-                    <div class="pocket p1"></div>
-                    <div class="pocket p2"></div>
-                    <div class="pocket p3"></div>
-                    <div class="pocket p4"></div>
-                    <div class="pocket p5"></div>
-                    <div class="pocket p6"></div>
+                <div
+                    style="
+                        position:relative;
+                        width:100%;
+                        max-width:850px;
+                        aspect-ratio:16/9;
+                        margin:auto;
+                        background:
+                        radial-gradient(
+                            ellipse,
+                            #277a42,
+                            #0b4922
+                        );
+                        border:25px solid #58371d;
+                        border-radius:30px;
+                        overflow:hidden;
+                        box-shadow:
+                        inset 0 0 20px #000;
+                    "
+                >
+
+                    <div
+                        style="
+                            position:absolute;
+                            width:7%;
+                            aspect-ratio:1;
+                            border-radius:50%;
+                            background:#111;
+                            left:0;
+                            top:0;
+                        "
+                    ></div>
+
+                    <div
+                        style="
+                            position:absolute;
+                            width:7%;
+                            aspect-ratio:1;
+                            border-radius:50%;
+                            background:#111;
+                            right:0;
+                            top:0;
+                        "
+                    ></div>
+
+                    <div
+                        style="
+                            position:absolute;
+                            width:7%;
+                            aspect-ratio:1;
+                            border-radius:50%;
+                            background:#111;
+                            left:0;
+                            bottom:0;
+                        "
+                    ></div>
+
+                    <div
+                        style="
+                            position:absolute;
+                            width:7%;
+                            aspect-ratio:1;
+                            border-radius:50%;
+                            background:#111;
+                            right:0;
+                            bottom:0;
+                        "
+                    ></div>
 
                     ${balls}
+
                 </div>
 
-                <div style="
-                    text-align:center;
-                    margin-top:15px;
-                    opacity:.8;
-                ">
+                <div class="game-status">
                     Açı ve gücü ayarla → VUR.
-                    Toplar durunca yeni atış hakkın devam eder.
+                    Toplar durduğunda tekrar atış yap.
                 </div>
+
             </div>
         `);
 
@@ -2458,12 +2526,18 @@ const BilardoGame = (() => {
         };
 
         $("#powerMinus").onclick=()=>{
-            state.power=Math.max(10,state.power-5);
+            state.power=Math.max(
+                10,
+                state.power-5
+            );
             render();
         };
 
         $("#powerPlus").onclick=()=>{
-            state.power=Math.min(100,state.power+5);
+            state.power=Math.min(
+                100,
+                state.power+5
+            );
             render();
         };
 
@@ -2472,103 +2546,167 @@ const BilardoGame = (() => {
     }
 
     return {start};
+
 })();
 
 /* ============================================================
    MAHJONG
    ============================================================ */
 
-const MahjongGame = (() => {
+const MahjongGame=(()=>{
 
-    let state;
+    let state=null;
 
     function start(){
+
         const symbols=[
             "🀀","🀁","🀂","🀃",
             "🀄","🀅","🀆",
-            "🀇","🀈","🀉","🀊","🀋"
+            "🀇","🀈","🀉","🀊",
+            "🀋","🀌","🀍","🀎"
         ];
 
         let tiles=[];
 
-        symbols.forEach(s=>{
-            for(let i=0;i<4;i++)tiles.push(s);
+        shuffle(symbols.slice(0,12))
+        .forEach(s=>{
+            tiles.push(s,s);
         });
 
         state={
-            tiles:shuffle(tiles).slice(0,24),
+            tiles:shuffle(tiles),
             selected:[],
-            level:1
+            moves:0
         };
 
         render();
     }
 
+    function choose(i){
+
+        if(state.tiles[i]===null)return;
+
+        if(state.selected.includes(i))
+            return;
+
+        state.selected.push(i);
+        state.moves++;
+
+        if(state.selected.length===2){
+
+            const [a,b]=state.selected;
+
+            if(state.tiles[a]===state.tiles[b]){
+
+                state.tiles[a]=null;
+                state.tiles[b]=null;
+
+                addXP(10);
+
+                if(state.tiles.every(t=>t===null)){
+
+                    gameReward(true);
+
+                    notify(
+                        "🀙 Tüm taşları eşleştirdin!",
+                        "🀙",
+                        "Mahjong"
+                    );
+                }
+
+            }else{
+
+                later(()=>{
+                    state.selected=[];
+                    render();
+                },500);
+
+                render();
+                return;
+            }
+
+            state.selected=[];
+        }
+
+        render();
+    }
+
     function render(){
+
         openGameModal("🀙 Mahjong",`
+
             <div class="game-shell">
+
                 <div class="game-toolbar">
-                    <button class="game-btn gold" id="newMahjong">
+                    <button
+                        class="game-btn gold"
+                        id="newMahjong"
+                    >
                         🔄 Yeni Tahta
                     </button>
                 </div>
 
                 <div class="game-status">
-                    Aynı iki taşı eşleştir.
+                    Aynı iki taşı bul.
+                    • Hamle: ${state.moves}
                 </div>
 
-                <div style="
-                    display:grid;
-                    grid-template-columns:repeat(6,1fr);
-                    gap:8px;
-                    max-width:700px;
-                    margin:auto;
-                ">
+                <div
+                    style="
+                        display:grid;
+                        grid-template-columns:
+                        repeat(6,1fr);
+                        gap:8px;
+                        max-width:650px;
+                        margin:auto;
+                    "
+                >
                     ${state.tiles.map((t,i)=>`
+
                         <button
-                            class="okey-tile"
-                            data-i="${i}"
+                            data-mahjong="${i}"
                             style="
-                                width:auto;
-                                height:70px;
+                                aspect-ratio:.75;
+                                border-radius:9px;
+                                border:2px solid
+                                ${
+                                    state.selected.includes(i)
+                                    ?"gold"
+                                    :"#bbb"
+                                };
+                                background:
+                                ${
+                                    t===null
+                                    ?"transparent"
+                                    :"linear-gradient(#fff,#ddd)"
+                                };
+                                color:#111;
                                 font-size:28px;
+                                font-weight:900;
+                                box-shadow:
+                                0 4px 7px #0005;
                             "
-                        >${state.selected.includes(i)?"":"🀫"}</button>
+                        >
+                            ${
+                                t===null
+                                ?""
+                                :state.selected.includes(i)
+                                ?t
+                                :"🀫"
+                            }
+                        </button>
+
                     `).join("")}
                 </div>
+
             </div>
         `);
 
-        $$(".okey-tile").forEach(el=>{
+        $$("[data-mahjong]").forEach(el=>{
             el.onclick=()=>{
-                const i=Number(el.dataset.i);
-
-                if(state.selected.includes(i))return;
-
-                state.selected.push(i);
-
-                if(state.selected.length===2){
-                    const [a,b]=state.selected;
-
-                    if(state.tiles[a]===state.tiles[b]){
-                        state.tiles[a]=null;
-                        state.tiles[b]=null;
-                        state.tiles=state.tiles.filter(Boolean);
-
-                        addXP(20);
-
-                        if(!state.tiles.length){
-                            gameReward(true);
-                            notify("🀙 Mahjong tamamlandı!");
-                        }
-                    }else{
-                        notify("Eşleşmedi.");
-                    }
-
-                    state.selected=[];
-                }
-
-                render();
+                choose(
+                    Number(el.dataset.mahjong)
+                );
             };
         });
 
@@ -2576,51 +2714,116 @@ const MahjongGame = (() => {
     }
 
     return {start};
+
 })();
 
 /* ============================================================
    SUDOKU
    ============================================================ */
 
-const SudokuGame = (() => {
+const SudokuGame=(()=>{
 
-    let board;
+    let board=[];
+    let solution=[];
 
-    function start(){
-        board=Array.from({length:9},()=>Array(9).fill(0));
+    function baseBoard(){
+
+        const b=Array.from(
+            {length:9},
+            ()=>Array(9).fill(0)
+        );
 
         for(let r=0;r<9;r++){
             for(let c=0;c<9;c++){
-                board[r][c]=((r*3+Math.floor(r/3)+c)%9)+1;
+                b[r][c]=
+                    (r*3+
+                    Math.floor(r/3)+
+                    c)%9+1;
             }
         }
 
-        /* bazılarını boşalt */
-        for(let i=0;i<42;i++){
-            board[rand(0,8)][rand(0,8)]=0;
+        return b;
+    }
+
+    function start(){
+
+        solution=baseBoard();
+
+        board=solution.map(row=>[...row]);
+
+        for(let i=0;i<45;i++){
+
+            const r=rand(0,8);
+            const c=rand(0,8);
+
+            board[r][c]=0;
         }
 
         render();
     }
 
+    function check(){
+
+        for(let r=0;r<9;r++){
+            for(let c=0;c<9;c++){
+
+                const input=
+                    $(`.sudoku-cell[data-r="${r}"][data-c="${c}"]`);
+
+                if(!input)continue;
+
+                const value=
+                    Number(input.value||0);
+
+                if(value!==solution[r][c]){
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
     function render(){
+
         openGameModal("🔢 Sudoku",`
+
             <div class="game-shell">
+
                 <div class="game-toolbar">
-                    <button class="game-btn gold" id="newSudoku">
+                    <button
+                        class="game-btn gold"
+                        id="newSudoku"
+                    >
                         🔄 Yeni Bulmaca
+                    </button>
+
+                    <button
+                        class="game-btn primary"
+                        id="checkSudoku"
+                    >
+                        ✓ Kontrol Et
                     </button>
                 </div>
 
-                <div style="
-                    display:grid;
-                    grid-template-columns:repeat(9,1fr);
-                    max-width:600px;
-                    margin:auto;
-                    border:4px solid #fff;
-                ">
+                <div class="game-status">
+                    1-9 rakamlarını kullan.
+                </div>
+
+                <div
+                    style="
+                        display:grid;
+                        grid-template-columns:
+                        repeat(9,1fr);
+                        max-width:600px;
+                        margin:auto;
+                        border:4px solid #fff;
+                    "
+                >
+
                     ${board.flatMap((row,r)=>
                         row.map((v,c)=>`
+
                             <input
                                 class="sudoku-cell"
                                 data-r="${r}"
@@ -2628,6 +2831,11 @@ const SudokuGame = (() => {
                                 value="${v||""}"
                                 maxlength="1"
                                 inputmode="numeric"
+                                ${
+                                    v
+                                    ?"readonly"
+                                    :""
+                                }
                                 style="
                                     width:100%;
                                     aspect-ratio:1;
@@ -2635,60 +2843,87 @@ const SudokuGame = (() => {
                                     font-size:22px;
                                     font-weight:900;
                                     border:1px solid #777;
-                                    background:${
-                                        (Math.floor(r/3)+Math.floor(c/3))%2
-                                        ?"rgba(108,99,255,.15)"
+                                    background:
+                                    ${
+                                        v
+                                        ?"rgba(108,99,255,.3)"
                                         :"rgba(255,255,255,.05)"
                                     };
                                     color:inherit;
                                 "
                             >
+
                         `)
                     ).join("")}
+
                 </div>
+
             </div>
         `);
 
-        $$(".sudoku-cell").forEach(input=>{
+        $$(".sudoku-cell:not([readonly])").forEach(input=>{
             input.oninput=()=>{
-                input.value=input.value.replace(/[^1-9]/g,"");
-                check();
+                input.value=
+                    input.value
+                    .replace(/[^1-9]/g,"");
             };
         });
 
         $("#newSudoku").onclick=start;
-    }
 
-    function check(){
-        const complete=board.every(row=>row.every(Boolean));
+        $("#checkSudoku").onclick=()=>{
 
-        if(complete){
-            gameReward(true);
-            notify("🎉 Sudoku tamamlandı!");
-        }
+            if(check()){
+
+                gameReward(true);
+
+                notify(
+                    "🎉 Sudoku doğru tamamlandı!",
+                    "🔢",
+                    "Sudoku"
+                );
+
+            }else{
+
+                notify(
+                    "Henüz doğru değil. Boş veya hatalı hücreler var.",
+                    "🔢",
+                    "Sudoku"
+                );
+            }
+        };
     }
 
     return {start};
+
 })();
 
 /* ============================================================
    BUBBLE SHOOTER
    ============================================================ */
 
-const BubbleGame = (() => {
+const BubbleGame=(()=>{
 
-    let bubbles;
-    let shots;
+    let state=null;
+
+    const colors=[
+        "🔴","🟡","🟢","🔵","🟣"
+    ];
 
     function start(){
-        shots=0;
-        bubbles=[];
+
+        state={
+            bubbles:[],
+            shots:0,
+            level:1
+        };
 
         for(let i=0;i<35;i++){
-            bubbles.push({
+
+            state.bubbles.push({
                 color:rand(0,4),
-                x:rand(8,92),
-                y:rand(8,45)
+                x:rand(7,93),
+                y:rand(7,45)
             });
         }
 
@@ -2696,67 +2931,137 @@ const BubbleGame = (() => {
     }
 
     function shoot(){
-        if(!bubbles.length){
-            gameReward(true);
-            start();
-            return;
-        }
 
-        shots++;
+        state.shots++;
 
         const color=rand(0,4);
-        const index=bubbles.findIndex(b=>b.color===color);
 
-        if(index>=0){
-            bubbles.splice(index,1);
-            addXP(5);
+        const same=
+            state.bubbles
+            .map((b,i)=>({b,i}))
+            .filter(x=>x.b.color===color);
+
+        if(same.length>=2){
+
+            const amount=
+                Math.min(
+                    rand(2,4),
+                    same.length
+                );
+
+            shuffle(same)
+            .slice(0,amount)
+            .sort((a,b)=>b.i-a.i)
+            .forEach(x=>{
+                state.bubbles.splice(x.i,1);
+            });
+
+            addXP(amount*3);
+        }
+
+        if(!state.bubbles.length){
+
+            gameReward(true);
+
+            notify(
+                "🫧 Bölüm tamamlandı!",
+                "🫧",
+                "Bubble Shooter"
+            );
+
+            state.level++;
+
+            for(let i=0;i<35+state.level*2;i++){
+                state.bubbles.push({
+                    color:rand(0,4),
+                    x:rand(7,93),
+                    y:rand(7,45)
+                });
+            }
         }
 
         render();
     }
 
     function render(){
-        const colors=["🔴","🟡","🟢","🔵","🟣"];
 
         openGameModal("🫧 Bubble Shooter",`
+
             <div class="game-shell">
+
                 <div class="game-toolbar">
-                    <button class="game-btn primary" id="bubbleShoot">
+
+                    <button
+                        class="game-btn primary"
+                        id="bubbleShoot"
+                    >
                         🫧 Ateş Et
                     </button>
-                    <button class="game-btn gold" id="bubbleNew">
+
+                    <button
+                        class="game-btn gold"
+                        id="bubbleNew"
+                    >
                         🔄 Yeni Bölüm
                     </button>
+
                 </div>
 
-                <div style="
-                    position:relative;
-                    height:550px;
-                    background:#08172b;
-                    border-radius:20px;
-                    overflow:hidden;
-                ">
-                    ${bubbles.map(b=>`
-                        <div style="
-                            position:absolute;
-                            left:${b.x}%;
-                            top:${b.y}%;
-                            font-size:42px;
-                        ">${colors[b.color]}</div>
+                <div
+                    style="
+                        position:relative;
+                        height:520px;
+                        max-width:700px;
+                        margin:auto;
+                        background:
+                        radial-gradient(
+                            circle at 50% 20%,
+                            #173a6a,
+                            #071426
+                        );
+                        border-radius:20px;
+                        overflow:hidden;
+                    "
+                >
+
+                    ${state.bubbles.map(b=>`
+
+                        <div
+                            style="
+                                position:absolute;
+                                left:${b.x}%;
+                                top:${b.y}%;
+                                font-size:38px;
+                                transform:
+                                translate(-50%,-50%);
+                            "
+                        >
+                            ${colors[b.color]}
+                        </div>
+
                     `).join("")}
 
-                    <div style="
-                        position:absolute;
-                        bottom:15px;
-                        left:50%;
-                        transform:translateX(-50%);
-                        font-size:50px;
-                    ">🔵</div>
+                    <div
+                        style="
+                            position:absolute;
+                            bottom:12px;
+                            left:50%;
+                            transform:
+                            translateX(-50%);
+                            font-size:50px;
+                        "
+                    >
+                        🔵
+                    </div>
+
                 </div>
 
                 <div class="game-status">
-                    Kalan balon: ${bubbles.length} • Atış: ${shots}
+                    Seviye: ${state.level}
+                    • Kalan: ${state.bubbles.length}
+                    • Atış: ${state.shots}
                 </div>
+
             </div>
         `);
 
@@ -2765,254 +3070,446 @@ const BubbleGame = (() => {
     }
 
     return {start};
+
 })();
 
 /* ============================================================
    ARABA YARIŞI
    ============================================================ */
 
-const RaceGame = (() => {
+const RaceGame=(()=>{
 
-    let state;
+    let state=null;
 
     function start(){
+
         state={
-            level:1,
-            player:45,
-            opponents:[20,60,80],
             distance:0,
-            speed:4,
+            player:50,
+            opponents:[25,50,75],
+            speed:3,
+            turbo:false,
+            level:1,
             finished:false
         };
 
         render();
 
-        clearInterval(gameTimer);
+        clearGameTimers();
 
-        gameTimer=setInterval(()=>{
-            if(state.finished)return;
+        gameTimer=setInterval(step,350);
+    }
 
-            state.distance+=state.speed;
+    function step(){
 
-            state.opponents=state.opponents.map(
-                x=>x+rand(-2,2)
+        if(!state || state.finished)return;
+
+        state.distance+=state.speed;
+
+        state.opponents=
+            state.opponents.map(
+                x=>Math.max(
+                    8,
+                    Math.min(
+                        92,
+                        x+rand(-5,5)
+                    )
+                )
             );
 
-            if(state.distance>=100){
-                state.finished=true;
-                gameReward(true);
-                notify("🏁 Yarışı kazandın!");
-            }
+        if(state.distance>=100){
 
-            render();
-        },500);
-    }
+            state.finished=true;
 
-    function left(){
-        state.player=Math.max(8,state.player-6);
+            gameReward(true);
+
+            notify(
+                "🏁 Yarışı kazandın!",
+                "🏎️",
+                "Yarış"
+            );
+
+            clearInterval(gameTimer);
+        }
+
         render();
     }
 
-    function right(){
-        state.player=Math.min(92,state.player+6);
+    function move(delta){
+
+        if(state.finished)return;
+
+        state.player=Math.max(
+            8,
+            Math.min(
+                92,
+                state.player+delta
+            )
+        );
+
         render();
+    }
+
+    function turbo(){
+
+        if(state.finished)return;
+
+        state.speed=7;
+
+        render();
+
+        later(()=>{
+            if(state)
+                state.speed=3;
+        },1500);
     }
 
     function render(){
+
         openGameModal("🏎️ Araba Yarışı",`
+
             <div class="game-shell">
+
                 <div class="game-toolbar">
-                    <button class="game-btn" id="raceLeft">⬅️</button>
-                    <button class="game-btn primary" id="raceBoost">
+
+                    <button
+                        class="game-btn"
+                        id="raceLeft"
+                    >⬅️</button>
+
+                    <button
+                        class="game-btn primary"
+                        id="raceBoost"
+                    >
                         🚀 TURBO
                     </button>
-                    <button class="game-btn" id="raceRight">➡️</button>
-                    <button class="game-btn gold" id="raceNew">
-                        🔄 Yeni Yarış
+
+                    <button
+                        class="game-btn"
+                        id="raceRight"
+                    >➡️</button>
+
+                    <button
+                        class="game-btn gold"
+                        id="raceNew"
+                    >
+                        🔄 Yeni
                     </button>
+
                 </div>
 
                 <div class="game-status">
-                    Mesafe: ${Math.min(100,state.distance)}%
+                    Mesafe:
+                    ${Math.min(100,
+                        Math.floor(state.distance)
+                    )}%
+                    •
+                    ${state.turbo?"🚀 TURBO":""}
                 </div>
 
-                <div style="
-                    position:relative;
-                    height:600px;
-                    max-width:500px;
-                    margin:auto;
-                    background:
+                <div
+                    style="
+                        position:relative;
+                        height:600px;
+                        max-width:500px;
+                        margin:auto;
+                        background:
                         repeating-linear-gradient(
                             to bottom,
-                            #333 0px,
+                            #333 0,
                             #333 80px,
                             #555 80px,
                             #555 160px
                         );
-                    border-left:45px solid #222;
-                    border-right:45px solid #222;
-                    overflow:hidden;
-                ">
-                    ${state.opponents.map((x,i)=>`
-                        <div style="
-                            position:absolute;
-                            left:${x}%;
-                            top:${20+i*18}%;
-                            font-size:42px;
-                        ">🚗</div>
-                    `).join("")}
+                        border-left:45px solid #222;
+                        border-right:45px solid #222;
+                        overflow:hidden;
+                        border-radius:15px;
+                    "
+                >
 
-                    <div style="
-                        position:absolute;
-                        left:${state.player}%;
-                        bottom:25px;
-                        transform:translateX(-50%);
-                        font-size:48px;
-                    ">🏎️</div>
+                    ${state.opponents.map(
+                        (x,i)=>`
+                            <div
+                                style="
+                                    position:absolute;
+                                    left:${x}%;
+                                    top:${25+i*18}%;
+                                    transform:
+                                    translateX(-50%);
+                                    font-size:42px;
+                                "
+                            >🚗</div>
+                        `
+                    ).join("")}
+
+                    <div
+                        style="
+                            position:absolute;
+                            left:${state.player}%;
+                            bottom:25px;
+                            transform:
+                            translateX(-50%);
+                            font-size:48px;
+                        "
+                    >🏎️</div>
+
                 </div>
+
             </div>
         `);
 
-        $("#raceLeft").onclick=left;
-        $("#raceRight").onclick=right;
-
-        $("#raceBoost").onclick=()=>{
-            state.speed=8;
-            setTimeout(()=>{
-                state.speed=4;
-            },1500);
+        $("#raceLeft").onclick=()=>{
+            move(-7);
         };
 
+        $("#raceRight").onclick=()=>{
+            move(7);
+        };
+
+        $("#raceBoost").onclick=turbo;
         $("#raceNew").onclick=start;
     }
 
     return {start};
+
 })();
 
 /* ============================================================
    BLOCK PUZZLE
    ============================================================ */
 
-const BlockGame = (() => {
+const BlockGame=(()=>{
 
-    let grid;
+    let state=null;
 
     function start(){
-        grid=Array.from({length:8},()=>Array(8).fill(false));
+
+        state={
+            grid:Array.from(
+                {length:8},
+                ()=>Array(8).fill(false)
+            ),
+            score:0,
+            level:1
+        };
+
         render();
     }
 
     function toggle(r,c){
-        grid[r][c]=!grid[r][c];
 
-        const fullRows=grid
-            .map((row,i)=>row.every(Boolean)?i:-1)
-            .filter(i=>i>=0);
+        state.grid[r][c]=
+            !state.grid[r][c];
 
-        if(fullRows.length){
-            fullRows.forEach(r=>{
-                grid[r]=Array(8).fill(false);
-            });
+        let cleared=0;
 
-            gameReward(false);
+        for(let i=0;i<8;i++){
+
+            if(state.grid[i].every(Boolean)){
+                state.grid[i]=
+                    Array(8).fill(false);
+                cleared++;
+            }
+        }
+
+        for(let c2=0;c2<8;c2++){
+
+            let full=true;
+
+            for(let r=0;r<8;r++){
+                if(!state.grid[r][c2]){
+                    full=false;
+                    break;
+                }
+            }
+
+            if(full){
+
+                for(let r=0;r<8;r++)
+                    state.grid[r][c2]=false;
+
+                cleared++;
+            }
+        }
+
+        if(cleared){
+
+            state.score+=cleared*100;
+            addXP(cleared*10);
+
+            if(state.score>=state.level*500){
+                state.level++;
+                coins+=5;
+                saveProgress();
+            }
         }
 
         render();
     }
 
     function render(){
+
         openGameModal("🧩 Block Puzzle",`
+
             <div class="game-shell">
+
                 <div class="game-toolbar">
-                    <button class="game-btn gold" id="newBlock">
+
+                    <button
+                        class="game-btn gold"
+                        id="newBlock"
+                    >
                         🔄 Yeni Oyun
                     </button>
+
                 </div>
 
-                <div style="
-                    display:grid;
-                    grid-template-columns:repeat(8,1fr);
-                    width:min(92vw,520px);
-                    margin:auto;
-                    gap:4px;
-                ">
-                    ${grid.flatMap((row,r)=>
+                <div class="game-status">
+                    Seviye: ${state.level}
+                    • Skor: ${state.score}
+                </div>
+
+                <div
+                    style="
+                        display:grid;
+                        grid-template-columns:
+                        repeat(8,1fr);
+                        width:min(92vw,520px);
+                        margin:auto;
+                        gap:4px;
+                    "
+                >
+
+                    ${state.grid.flatMap(
+                        (row,r)=>
                         row.map((v,c)=>`
+
                             <button
-                                data-r="${r}"
-                                data-c="${c}"
+                                data-br="${r}"
+                                data-bc="${c}"
                                 style="
                                     aspect-ratio:1;
                                     border:0;
                                     border-radius:8px;
-                                    background:${
-                                        v?"#6c63ff":"#202a49"
+                                    background:
+                                    ${
+                                        v
+                                        ?"linear-gradient(135deg,#8b5cf6,#4f46e5)"
+                                        :"#202a49"
                                     };
+                                    box-shadow:
+                                    ${v
+                                        ?"inset 0 2px 3px #fff4"
+                                        :"none"};
                                 "
                             ></button>
+
                         `)
                     ).join("")}
+
                 </div>
+
             </div>
         `);
 
-        $$("[data-r]").forEach(el=>{
-            el.onclick=()=>toggle(
-                Number(el.dataset.r),
-                Number(el.dataset.c)
-            );
+        $$("[data-br][data-bc]").forEach(el=>{
+            el.onclick=()=>{
+                toggle(
+                    Number(el.dataset.br),
+                    Number(el.dataset.bc)
+                );
+            };
         });
 
         $("#newBlock").onclick=start;
     }
 
     return {start};
+
 })();
 
 /* ============================================================
    OKÇULUK
    ============================================================ */
 
-const ArcheryGame = (() => {
+const ArcheryGame=(()=>{
 
-    let scoreA=0;
+    let state=null;
 
     function start(){
-        scoreA=0;
+
+        state={
+            score:0,
+            arrows:0,
+            level:1
+        };
+
         render();
     }
 
     function shoot(){
-        const points=[10,20,30,50,100];
-        scoreA+=points[rand(0,points.length-1)];
 
-        if(scoreA>=500){
+        const points=[
+            5,10,20,30,50,100
+        ];
+
+        const hit=
+            points[rand(0,points.length-1)];
+
+        state.score+=hit;
+        state.arrows++;
+
+        addXP(Math.max(2,Math.floor(hit/5)));
+
+        if(state.score>=500){
+
             gameReward(true);
-            notify("🏹 Hedef tamamlandı!");
-            scoreA=0;
+
+            notify(
+                "🏹 Hedef tamamlandı!",
+                "🏹",
+                "Okçuluk"
+            );
+
+            state.score=0;
+            state.level++;
         }
 
         render();
     }
 
     function render(){
+
         openGameModal("🏹 Okçuluk",`
+
             <div class="game-shell">
+
                 <div class="game-toolbar">
-                    <button class="game-btn primary" id="archShoot">
+
+                    <button
+                        class="game-btn primary"
+                        id="archShoot"
+                    >
                         🏹 ATIŞ YAP
                     </button>
-                    <button class="game-btn gold" id="archNew">
+
+                    <button
+                        class="game-btn gold"
+                        id="archNew"
+                    >
                         🔄 Yeni Seri
                     </button>
+
                 </div>
 
-                <div style="
-                    width:min(85vw,550px);
-                    aspect-ratio:1;
-                    border-radius:50%;
-                    margin:30px auto;
-                    background:
+                <div
+                    style="
+                        width:min(85vw,550px);
+                        aspect-ratio:1;
+                        border-radius:50%;
+                        margin:30px auto;
+                        background:
                         radial-gradient(
                             circle,
                             #111 0 8%,
@@ -3022,15 +3519,23 @@ const ArcheryGame = (() => {
                             #444 51% 65%,
                             #eee 66%
                         );
-                    display:flex;
-                    align-items:center;
-                    justify-content:center;
-                    font-size:30px;
-                ">🎯</div>
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        font-size:30px;
+                        box-shadow:
+                        0 10px 25px #0008;
+                    "
+                >
+                    🎯
+                </div>
 
                 <div class="game-status">
-                    Skor: ${scoreA} / 500
+                    Seviye: ${state.level}
+                    • Skor: ${state.score}/500
+                    • Ok: ${state.arrows}
                 </div>
+
             </div>
         `);
 
@@ -3039,36 +3544,42 @@ const ArcheryGame = (() => {
     }
 
     return {start};
+
 })();
 
 /* ============================================================
-   HAFIZA / EŞLEŞTİRME
+   HAFIZA OYUNU
    ============================================================ */
 
-function createMemoryGame(title, size=16){
+function createMemoryGame(title,size){
 
-    let cards;
+    let cards=[];
     let open=[];
+    let matched=[];
     let locked=false;
-    let matched=0;
+    let moves=0;
+
+    const symbols=[
+        "🍎","🍋","🍇","🍉",
+        "🍒","🥝","🍓","🍊",
+        "🥕","🍔","🍕","🍩",
+        "🍪","🍀","⭐","🚀"
+    ];
 
     function start(){
-
-        const symbols=[
-            "🍎","🍋","🍇","🍉",
-            "🍒","🥝","🍓","🍊",
-            "🥕","🍔","🍕","🍩"
-        ];
 
         const needed=size/2;
 
         cards=shuffle(
-            symbols.slice(0,needed).flatMap(x=>[x,x])
+            symbols
+            .slice(0,needed)
+            .flatMap(x=>[x,x])
         );
 
         open=[];
+        matched=[];
         locked=false;
-        matched=0;
+        moves=0;
 
         render();
     }
@@ -3077,72 +3588,122 @@ function createMemoryGame(title, size=16){
 
         if(locked)return;
         if(open.includes(i))return;
+        if(matched.includes(i))return;
 
         open.push(i);
+        moves++;
 
         render();
 
         if(open.length===2){
+
             locked=true;
 
-            setTimeout(()=>{
-                if(cards[open[0]]===cards[open[1]]){
-                    matched+=2;
+            later(()=>{
+
+                const [a,b]=open;
+
+                if(cards[a]===cards[b]){
+
+                    matched.push(a,b);
                     addXP(10);
+
                 }
 
                 open=[];
                 locked=false;
 
-                if(matched===cards.length){
+                if(matched.length===cards.length){
+
                     gameReward(true);
-                    notify("🧠 Tüm kartları buldun!");
+
+                    notify(
+                        "🧠 Tüm kartları buldun!",
+                        "🧠",
+                        title
+                    );
                 }
 
                 render();
-            },650);
+
+            },600);
         }
     }
 
     function render(){
 
         openGameModal(title,`
+
             <div class="game-shell">
+
                 <div class="game-toolbar">
-                    <button class="game-btn gold" id="memoryNew">
+
+                    <button
+                        class="game-btn gold"
+                        id="memoryNew"
+                    >
                         🔄 Yeni Oyun
                     </button>
+
                 </div>
 
-                <div style="
-                    display:grid;
-                    grid-template-columns:repeat(4,1fr);
-                    gap:10px;
-                    max-width:550px;
-                    margin:auto;
-                ">
+                <div class="game-status">
+                    Hamle: ${moves}
+                    • Bulunan: ${matched.length/2}/${cards.length/2}
+                </div>
+
+                <div
+                    style="
+                        display:grid;
+                        grid-template-columns:
+                        repeat(4,1fr);
+                        gap:10px;
+                        max-width:550px;
+                        margin:auto;
+                    "
+                >
+
                     ${cards.map((c,i)=>`
+
                         <button
-                            data-card="${i}"
+                            data-memory="${i}"
                             style="
                                 aspect-ratio:1;
-                                border:0;
+                                border:2px solid #455;
                                 border-radius:14px;
-                                background:#27365d;
-                                color:white;
+                                background:
+                                ${
+                                    open.includes(i)||
+                                    matched.includes(i)
+                                    ?"linear-gradient(135deg,#fff,#ddd)"
+                                    :"linear-gradient(135deg,#27365d,#111b34)"
+                                };
+                                color:#111;
                                 font-size:36px;
                                 cursor:pointer;
                             "
                         >
-                            ${open.includes(i)||matched>0&&false?c:"?"}
+                            ${
+                                open.includes(i)||
+                                matched.includes(i)
+                                ?c
+                                :"?"
+                            }
                         </button>
+
                     `).join("")}
+
                 </div>
+
             </div>
         `);
 
-        $$(".game-shell [data-card]").forEach(el=>{
-            el.onclick=()=>click(Number(el.dataset.card));
+        $$("[data-memory]").forEach(el=>{
+            el.onclick=()=>{
+                click(
+                    Number(el.dataset.memory)
+                );
+            };
         });
 
         $("#memoryNew").onclick=start;
@@ -3151,73 +3712,131 @@ function createMemoryGame(title, size=16){
     return {start};
 }
 
-const MemoryGame=createMemoryGame("🧠 Zeka Eşleştirme",16);
-const Memory2Game=createMemoryGame("🃏 Hafıza Oyunu",24);
+const MemoryGame=
+    createMemoryGame(
+        "🧠 Zeka Eşleştirme",
+        16
+    );
+
+const Memory2Game=
+    createMemoryGame(
+        "🃏 Hafıza Oyunu",
+        24
+    );
 
 /* ============================================================
    YILAN
    ============================================================ */
 
-const SnakeGame = (() => {
+const SnakeGame=(()=>{
 
-    let snake,food,dir,scoreS;
+    let state=null;
 
     function start(){
-        snake=[
-            {x:5,y:5},
-            {x:4,y:5},
-            {x:3,y:5}
-        ];
 
-        food={
-            x:rand(0,9),
-            y:rand(0,9)
+        state={
+            snake:[
+                {x:5,y:5},
+                {x:4,y:5},
+                {x:3,y:5}
+            ],
+            food:{
+                x:rand(0,9),
+                y:rand(0,9)
+            },
+            dir:{x:1,y:0},
+            score:0,
+            level:1,
+            alive:true
         };
-
-        dir={x:1,y:0};
-        scoreS=0;
 
         render();
 
-        clearInterval(gameTimer);
+        clearGameTimers();
 
-        gameTimer=setInterval(step,350);
+        gameTimer=
+            setInterval(step,
+                Math.max(
+                    120,
+                    350-(state.level*15)
+                )
+            );
+    }
+
+    function changeDir(x,y){
+
+        if(
+            state.dir.x===-x &&
+            state.dir.y===-y
+        )return;
+
+        state.dir={x,y};
     }
 
     function step(){
 
+        if(!state.alive)return;
+
         const head={
-            x:snake[0].x+dir.x,
-            y:snake[0].y+dir.y
+            x:state.snake[0].x+
+              state.dir.x,
+            y:state.snake[0].y+
+              state.dir.y
         };
 
         if(
-            head.x<0||head.x>=10||
-            head.y<0||head.y>=10||
-            snake.some(s=>s.x===head.x&&s.y===head.y)
+            head.x<0||
+            head.x>=10||
+            head.y<0||
+            head.y>=10||
+            state.snake.some(
+                s=>s.x===head.x&&s.y===head.y
+            )
         ){
-            notify("🐍 Oyun bitti. Yeniden başla.");
-            clearInterval(gameTimer);
+
+            state.alive=false;
+
+            clearGameTimers();
+
+            gameReward(false);
+
+            notify(
+                `Oyun bitti. Skorun: ${state.score}`,
+                "🐍",
+                "Yılan Oyunu"
+            );
+
+            render();
             return;
         }
 
-        snake.unshift(head);
+        state.snake.unshift(head);
 
-        if(head.x===food.x&&head.y===food.y){
-            scoreS+=10;
+        if(
+            head.x===state.food.x &&
+            head.y===state.food.y
+        ){
+
+            state.score+=10;
+
             addXP(5);
 
-            food={
+            state.food={
                 x:rand(0,9),
                 y:rand(0,9)
             };
 
-            if(scoreS>=100){
-                gameReward(true);
-                scoreS=0;
+            if(
+                state.score>=
+                state.level*100
+            ){
+                state.level++;
+                coins+=5;
+                saveProgress();
             }
+
         }else{
-            snake.pop();
+            state.snake.pop();
         }
 
         render();
@@ -3226,145 +3845,268 @@ const SnakeGame = (() => {
     function render(){
 
         openGameModal("🐍 Yılan Oyunu",`
+
             <div class="game-shell">
+
                 <div class="game-toolbar">
-                    <button class="game-btn" id="snakeUp">⬆️</button>
-                    <button class="game-btn" id="snakeLeft">⬅️</button>
-                    <button class="game-btn" id="snakeDown">⬇️</button>
-                    <button class="game-btn" id="snakeRight">➡️</button>
-                    <button class="game-btn gold" id="snakeNew">
+
+                    <button
+                        class="game-btn"
+                        id="snakeUp"
+                    >⬆️</button>
+
+                    <button
+                        class="game-btn"
+                        id="snakeLeft"
+                    >⬅️</button>
+
+                    <button
+                        class="game-btn"
+                        id="snakeDown"
+                    >⬇️</button>
+
+                    <button
+                        class="game-btn"
+                        id="snakeRight"
+                    >➡️</button>
+
+                    <button
+                        class="game-btn gold"
+                        id="snakeNew"
+                    >
                         🔄 Yeni
                     </button>
+
                 </div>
 
-                <div class="game-status">Skor: ${scoreS}</div>
-
-                <div style="
-                    display:grid;
-                    grid-template-columns:repeat(10,1fr);
-                    max-width:520px;
-                    margin:auto;
-                    background:#07111d;
-                    gap:2px;
-                ">
-                    ${Array.from({length:100},(_,i)=>{
-                        const x=i%10;
-                        const y=Math.floor(i/10);
-
-                        const isSnake=snake.some(
-                            s=>s.x===x&&s.y===y
-                        );
-
-                        const isFood=
-                            food.x===x&&food.y===y;
-
-                        return `
-                            <div style="
-                                aspect-ratio:1;
-                                background:${
-                                    isFood
-                                    ?"red"
-                                    :isSnake
-                                    ?"limegreen"
-                                    :"#14233a"
-                                };
-                            "></div>
-                        `;
-                    }).join("")}
+                <div class="game-status">
+                    Seviye: ${state.level}
+                    • Skor: ${state.score}
                 </div>
+
+                <div
+                    style="
+                        display:grid;
+                        grid-template-columns:
+                        repeat(10,1fr);
+                        max-width:520px;
+                        margin:auto;
+                        background:#07111d;
+                        gap:2px;
+                        padding:4px;
+                        border-radius:12px;
+                    "
+                >
+
+                    ${Array.from(
+                        {length:100},
+                        (_,i)=>{
+
+                            const x=i%10;
+                            const y=Math.floor(i/10);
+
+                            const isSnake=
+                                state.snake.some(
+                                    s=>
+                                    s.x===x&&
+                                    s.y===y
+                                );
+
+                            const isFood=
+                                state.food.x===x&&
+                                state.food.y===y;
+
+                            return `
+                                <div
+                                    style="
+                                        aspect-ratio:1;
+                                        border-radius:3px;
+                                        background:
+                                        ${
+                                            isFood
+                                            ?"red"
+                                            :isSnake
+                                            ?"limegreen"
+                                            :"#14233a"
+                                        };
+                                    "
+                                ></div>
+                            `;
+                        }
+                    ).join("")}
+
+                </div>
+
             </div>
         `);
 
-        $("#snakeUp").onclick=()=>dir={x:0,y:-1};
-        $("#snakeDown").onclick=()=>dir={x:0,y:1};
-        $("#snakeLeft").onclick=()=>dir={x:-1,y:0};
-        $("#snakeRight").onclick=()=>dir={x:1,y:0};
+        $("#snakeUp").onclick=()=>{
+            changeDir(0,-1);
+        };
+
+        $("#snakeDown").onclick=()=>{
+            changeDir(0,1);
+        };
+
+        $("#snakeLeft").onclick=()=>{
+            changeDir(-1,0);
+        };
+
+        $("#snakeRight").onclick=()=>{
+            changeDir(1,0);
+        };
+
         $("#snakeNew").onclick=start;
     }
 
     return {start};
+
 })();
 
 /* ============================================================
    BASKET
    ============================================================ */
 
-const BasketGame = (() => {
+const BasketGame=(()=>{
 
-    let points=0;
-    let levelB=1;
+    let state=null;
 
     function start(){
-        points=0;
-        levelB=1;
+
+        state={
+            points:0,
+            level:1,
+            shots:0,
+            made:0
+        };
+
         render();
     }
 
     function shoot(){
 
-        const success=Math.random()>.35;
+        state.shots++;
+
+        const success=
+            Math.random()>
+            Math.max(
+                .15,
+                .42-(state.level*.02)
+            );
 
         if(success){
-            points+=10;
+
+            state.points+=10;
+            state.made++;
+
             addXP(5);
+
+        }else{
+
+            addXP(1);
         }
 
-        if(points>=100){
-            levelB++;
-            points=0;
+        if(state.points>=100){
+
             gameReward(true);
-            notify("🏀 Bölüm tamamlandı!");
+
+            notify(
+                "🏀 Bölümü tamamladın!",
+                "🏀",
+                "Basket Atışı"
+            );
+
+            state.level++;
+            state.points=0;
         }
 
         render();
     }
 
     function render(){
+
         openGameModal("🏀 Basket Atışı",`
+
             <div class="game-shell">
+
                 <div class="game-toolbar">
-                    <button class="game-btn primary" id="basketShoot">
+
+                    <button
+                        class="game-btn primary"
+                        id="basketShoot"
+                    >
                         🏀 ATIŞ
                     </button>
-                    <button class="game-btn gold" id="basketNew">
+
+                    <button
+                        class="game-btn gold"
+                        id="basketNew"
+                    >
                         🔄 Yeni Bölüm
                     </button>
+
                 </div>
 
-                <div style="
-                    height:520px;
-                    max-width:700px;
-                    margin:auto;
-                    border-radius:20px;
-                    background:linear-gradient(#4e82c5,#c8793d);
-                    position:relative;
-                ">
-                    <div style="
-                        position:absolute;
-                        right:14%;
-                        top:30%;
-                        font-size:90px;
-                    ">🏀</div>
+                <div
+                    style="
+                        height:520px;
+                        max-width:700px;
+                        margin:auto;
+                        border-radius:20px;
+                        background:
+                        linear-gradient(
+                            #4e82c5,
+                            #c8793d
+                        );
+                        position:relative;
+                        overflow:hidden;
+                    "
+                >
 
-                    <div style="
-                        position:absolute;
-                        right:12%;
-                        top:23%;
-                        font-size:80px;
-                    ">⭕</div>
+                    <div
+                        style="
+                            position:absolute;
+                            right:12%;
+                            top:22%;
+                            font-size:80px;
+                        "
+                    >
+                        🏀
+                    </div>
 
-                    <div style="
-                        position:absolute;
-                        bottom:40px;
-                        left:50%;
-                        transform:translateX(-50%);
-                        font-size:80px;
-                    ">🏀</div>
+                    <div
+                        style="
+                            position:absolute;
+                            right:11%;
+                            top:18%;
+                            font-size:90px;
+                        "
+                    >
+                        🥅
+                    </div>
+
+                    <div
+                        style="
+                            position:absolute;
+                            bottom:35px;
+                            left:50%;
+                            transform:
+                            translateX(-50%);
+                            font-size:80px;
+                        "
+                    >
+                        🏀
+                    </div>
+
                 </div>
 
                 <div class="game-status">
-                    Seviye: ${levelB} • Skor: ${points}/100
+                    Seviye: ${state.level}
+                    • Skor: ${state.points}/100
+                    • Atış: ${state.shots}
+                    • İsabet: ${state.made}
                 </div>
+
             </div>
         `);
 
@@ -3373,140 +4115,186 @@ const BasketGame = (() => {
     }
 
     return {start};
+
 })();
 
 /* ============================================================
-   ANA SAYFADAKİ OYUN BUTONLARINI BAĞLA
+   ANA SAYFA BUTONLARI
    ============================================================ */
 
 function bindGameButtons(){
 
-    /* data-game kullananlar */
-    $$("[data-game]").forEach(btn=>{
-        if(btn.dataset.boundGame)return;
+    $$("[data-game]").forEach(el=>{
 
-        const id=btn.dataset.game;
+        if(el.dataset.boundGame)
+            return;
 
-        if(GAME_META[id]){
-            btn.dataset.boundGame="1";
+        el.dataset.boundGame="1";
 
-            btn.addEventListener("click",e=>{
-                e.preventDefault();
+        el.addEventListener("click",e=>{
+
+            if(
+                e.target.closest(
+                    ".play-game,.play-btn,.game-play"
+                )
+            ){
+                return;
+            }
+
+            e.preventDefault();
+
+            const id=
+                el.dataset.game||
+                el.dataset.id;
+
+            if(id)
                 openGame(id);
-            });
-        }
+        });
     });
 
-    /* Oyna butonları */
-    $$(".play-game, .play-btn, .game-play, [data-play]").forEach(btn=>{
-        if(btn.dataset.boundPlay)return;
+    $$(".play-game,.play-btn,.game-play,[data-play]")
+    .forEach(btn=>{
+
+        if(btn.dataset.boundPlay)
+            return;
 
         btn.dataset.boundPlay="1";
 
         btn.addEventListener("click",e=>{
+
             e.preventDefault();
+            e.stopPropagation();
 
             const id=
-                btn.dataset.play ||
-                btn.closest("[data-game]")?.dataset.game ||
+                btn.dataset.play||
+                btn.closest("[data-game]")?.dataset.game||
                 btn.closest("[data-id]")?.dataset.id;
 
-            if(id && GAME_META[id]){
+            if(id && GAME_META[id])
                 openGame(id);
-            }
-        });
-    });
-
-    /* Kartların onclick'i farklı olabilir */
-    $$("[onclick*='openGame']").forEach(el=>{
-        el.addEventListener("click",()=>{
-            updateTopUI();
         });
     });
 }
 
 /* ============================================================
-   KART GÖRSELLERİNİ AYIR
+   KART GÖRSELLERİ
    ============================================================ */
 
 function improveGameCards(){
 
-    const possibleCards=$$(
-        ".game-card, .game-item, .game-box, [data-game]"
-    );
-
-    possibleCards.forEach(card=>{
+    $$(".game-card").forEach(card=>{
 
         const id=
-            card.dataset.game ||
+            card.dataset.game||
             card.dataset.id;
 
         if(!GAME_META[id])return;
 
-        let icon=card.querySelector(".game-icon,.game-thumb,.game-image");
+        const game=GAME_META[id];
 
-        if(!icon){
-            icon=document.createElement("div");
-            icon.className="game-icon";
-            icon.style.cssText=`
-                font-size:44px;
-                min-height:55px;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                margin-bottom:8px;
-            `;
+        const icon=
+            card.querySelector(
+                ".game-icon,.game-thumb,.game-image"
+            );
 
-            card.prepend(icon);
-        }
+        if(icon){
 
-        icon.textContent=GAME_META[id].icon;
+            if(id==="okey")
+                icon.textContent="🀄";
 
-        /* Okey ve Mahjong kesinlikle farklı görünsün */
-        if(id==="okey"){
-            icon.textContent="🀄";
-            icon.title="101 Okey";
-        }
+            else if(id==="mahjong")
+                icon.textContent="🀙";
 
-        if(id==="mahjong"){
-            icon.textContent="🀙";
-            icon.title="Mahjong";
+            else
+                icon.textContent=game.icon;
         }
     });
 }
 
 /* ============================================================
-   FİLTRE SİSTEMİ
+   FİLTRELER
    ============================================================ */
 
 function bindFilters(){
 
     $$("[data-filter]").forEach(btn=>{
-        if(btn.dataset.boundFilter)return;
+
+        if(btn.dataset.boundFilter)
+            return;
 
         btn.dataset.boundFilter="1";
 
         btn.addEventListener("click",()=>{
-            const filter=btn.dataset.filter;
 
-            $$(".game-card, .game-item, [data-category]").forEach(card=>{
-                if(filter==="all" || filter==="tümü" || filter==="Tümü"){
-                    card.style.display="";
-                    return;
-                }
-
-                const cat=(
-                    card.dataset.category||
-                    card.dataset.cat||
-                    ""
+            const filter=
+                String(
+                    btn.dataset.filter||"all"
                 ).toLowerCase();
 
+            $$(".game-card").forEach(card=>{
+
+                const cat=
+                    String(
+                        card.dataset.category||
+                        card.dataset.cat||
+                        ""
+                    ).toLowerCase();
+
                 card.style.display=
-                    cat===String(filter).toLowerCase()
+                    filter==="all"||
+                    filter==="tümü"||
+                    cat===filter
                     ?""
                     :"none";
             });
+
+            $$("[data-filter]").forEach(b=>{
+                b.classList.remove("active");
+            });
+
+            btn.classList.add("active");
         });
+    });
+}
+
+/* ============================================================
+   REKLAM DEMOSU
+   ============================================================ */
+
+function setupDemoAd(){
+
+    const btn=$("#watch-ad-btn");
+
+    if(!btn || btn.dataset.boundAd)
+        return;
+
+    btn.dataset.boundAd="1";
+
+    btn.addEventListener("click",()=>{
+
+        notify(
+            "📺 Bu şu anda deneme reklamıdır. Gerçek AdSense reklamı değildir.",
+            "📺",
+            "Deneme Reklamı"
+        );
+
+        later(()=>{
+
+            changeScore(100);
+
+            coins+=10;
+
+            addXP(10);
+
+            saveProgress();
+
+            notify(
+                "🎁 Deneme reklam ödülü: +100 puan ve +10 🪙",
+                "🎁",
+                "Ödül"
+            );
+
+        },1000);
     });
 }
 
@@ -3516,57 +4304,90 @@ function bindFilters(){
 
 function setupDailyBonus(){
 
-    const btn=$("#dailyBonusBtn") ||
-             $("#watchDailyBonus") ||
-             $("#dailyBonus");
+    const btn=
+        $("#dailyBonusBtn")||
+        $("#watchDailyBonus")||
+        $("#dailyBonus");
 
-    if(!btn || btn.dataset.boundDaily)return;
+    if(!btn || btn.dataset.boundDaily)
+        return;
 
     btn.dataset.boundDaily="1";
 
     btn.addEventListener("click",()=>{
 
-        const today=new Date().toISOString().slice(0,10);
-        const last=localStorage.getItem("oynakazan_daily");
+        const today=
+            new Date()
+            .toISOString()
+            .slice(0,10);
+
+        const last=
+            localStorage.getItem(
+                "oynakazan_daily"
+            );
 
         if(last===today){
-            notify("🎁 Günlük bonusunu bugün zaten aldın.");
+
+            notify(
+                "🎁 Günlük bonusunu bugün zaten aldın."
+            );
+
             return;
         }
 
-        localStorage.setItem("oynakazan_daily",today);
+        localStorage.setItem(
+            "oynakazan_daily",
+            today
+        );
 
         coins+=25;
+        changeScore(25);
         addXP(10);
+
         saveProgress();
 
-        notify("🎁 Günlük bonus: +25 🪙");
+        notify(
+            "🎁 Günlük bonus: +25 🪙 ve +25 puan!",
+            "🎁",
+            "Günlük Bonus"
+        );
     });
 }
 
 /* ============================================================
-   DEMO REKLAM ÖDÜLÜ
+   MODAL KAPATMA
    ============================================================ */
 
-function setupDemoAd(){
+function setupModal(){
 
-    const btn=$("#watchAdBtn");
+    const close=$("#close-modal-btn");
 
-    if(!btn || btn.dataset.boundAd)return;
+    if(close){
 
-    btn.dataset.boundAd="1";
+        close.onclick=closeGame;
+    }
 
-    btn.addEventListener("click",()=>{
-        notify("📺 Bu şu anda deneme reklamıdır.");
+    const modal=$("#game-modal");
 
-        setTimeout(()=>{
-            changeScore(100);
-            coins+=10;
-            addXP(10);
+    if(modal){
 
-            notify("🎁 Deneme reklam ödülü: +100 puan");
-        },1200);
-    });
+        modal.addEventListener("click",e=>{
+
+            if(e.target===modal)
+                closeGame();
+        });
+    }
+
+    const message=$("#message-modal");
+
+    if(message){
+
+        message.addEventListener("click",e=>{
+
+            if(e.target===message)
+                message.classList.add("hidden");
+        });
+    }
 }
 
 /* ============================================================
@@ -3575,25 +4396,32 @@ function setupDemoAd(){
 
 document.addEventListener("keydown",e=>{
 
-    if(!currentGame)return;
-
     if(e.key==="Escape"){
-        closeGame();
+
+        if(currentGame)
+            closeGame();
+
+        const msg=$("#message-modal");
+
+        if(msg)
+            msg.classList.add("hidden");
+
         return;
     }
 
     if(currentGame==="snake"){
+
         if(e.key==="ArrowUp")
-            document.querySelector("#snakeUp")?.click();
+            $("#snakeUp")?.click();
 
-        if(e.key==="ArrowDown")
-            document.querySelector("#snakeDown")?.click();
+        else if(e.key==="ArrowDown")
+            $("#snakeDown")?.click();
 
-        if(e.key==="ArrowLeft")
-            document.querySelector("#snakeLeft")?.click();
+        else if(e.key==="ArrowLeft")
+            $("#snakeLeft")?.click();
 
-        if(e.key==="ArrowRight")
-            document.querySelector("#snakeRight")?.click();
+        else if(e.key==="ArrowRight")
+            $("#snakeRight")?.click();
     }
 });
 
@@ -3604,28 +4432,39 @@ document.addEventListener("keydown",e=>{
 function init(){
 
     updateTopUI();
+
+    createGameCards();
+
     bindGameButtons();
+
     improveGameCards();
+
     bindFilters();
-    setupDailyBonus();
+
     setupDemoAd();
 
-    /* HTML sonradan oluşursa tekrar bağla */
-    setTimeout(()=>{
-        bindGameButtons();
-        improveGameCards();
-        bindFilters();
-    },500);
+    setupDailyBonus();
 
-    setTimeout(()=>{
-        bindGameButtons();
-        improveGameCards();
-    },1500);
+    setupModal();
+
+    saveProgress();
+
+    console.log(
+        "🎮 OynaKazan hazır:",
+        Object.keys(GAME_META).length,
+        "oyun"
+    );
 }
 
 if(document.readyState==="loading"){
-    document.addEventListener("DOMContentLoaded",init);
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        init
+    );
+
 }else{
+
     init();
 }
 
@@ -3633,7 +4472,7 @@ if(document.readyState==="loading"){
    DIŞARIDAN ERİŞİM
    ============================================================ */
 
-window.OynaKazan = {
+window.OynaKazan={
     openGame,
     closeGame,
     score:()=>score,
@@ -3644,7 +4483,3 @@ window.OynaKazan = {
 };
 
 })();
-
-
-
-

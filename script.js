@@ -912,7 +912,457 @@ body{
     }
 }
 `;
+/* =========================================================
+   GERÇEK MASA GÖRÜNÜMÜ - SON TASARIM PAKETİ
+========================================================= */
 
+style.textContent += `
+
+/* ---------- GENEL MASA ---------- */
+
+.game-shell{
+    width:100%!important;
+    max-width:1180px!important;
+    margin:0 auto!important;
+    padding:0!important;
+}
+
+.table-game,
+.batak-table{
+    width:100%!important;
+    max-width:1150px!important;
+    margin:0 auto!important;
+    box-sizing:border-box!important;
+    min-height:700px!important;
+    padding:28px!important;
+    border:16px solid #3b1c0b!important;
+    border-radius:32px!important;
+    overflow:hidden!important;
+    background:
+        radial-gradient(
+            ellipse at center,
+            #18804d 0%,
+            #0d5937 45%,
+            #06351f 100%
+        )!important;
+    box-shadow:
+        inset 0 0 70px rgba(0,0,0,.75),
+        0 25px 60px rgba(0,0,0,.65)!important;
+}
+
+
+/* =========================================================
+   101 OKEY
+========================================================= */
+
+.okey-premium-shell{
+    width:100%!important;
+}
+
+.okey-table-real{
+    width:100%!important;
+    min-height:720px!important;
+    box-sizing:border-box!important;
+    border-radius:30px!important;
+    padding:25px!important;
+    background:
+        radial-gradient(
+            ellipse at center,
+            #147c49 0%,
+            #0b502f 50%,
+            #06321e 100%
+        )!important;
+    border:15px solid #3b1c0b!important;
+    box-shadow:
+        inset 0 0 70px #000b,
+        0 25px 60px #0009!important;
+}
+
+.okey-table-center{
+    min-height:430px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    justify-content:center!important;
+    position:relative!important;
+}
+
+.okey-middle{
+    min-height:230px!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:35px!important;
+}
+
+.okey-seat{
+    z-index:5!important;
+}
+
+.okey-pile-box{
+    background:rgba(0,0,0,.28)!important;
+    border:2px solid rgba(255,255,255,.14)!important;
+    border-radius:18px!important;
+    padding:14px!important;
+    box-shadow:0 10px 25px #0007!important;
+}
+
+.okey-big-tile{
+    width:70px!important;
+    height:100px!important;
+    border-radius:9px!important;
+    border:4px solid #c99f4d!important;
+    background:linear-gradient(#fffef4,#dfd2a9)!important;
+    box-shadow:0 8px 18px #0009!important;
+}
+
+.okey-rack{
+    position:relative!important;
+    z-index:20!important;
+    width:100%!important;
+    box-sizing:border-box!important;
+    min-height:115px!important;
+    margin-top:15px!important;
+    padding:15px!important;
+    border:7px solid #351707!important;
+    border-radius:18px!important;
+    background:
+        linear-gradient(
+            #75451e,
+            #4c260f
+        )!important;
+    box-shadow:
+        inset 0 0 25px #000b,
+        0 10px 25px #0008!important;
+}
+
+.okey-tile{
+    width:42px!important;
+    height:62px!important;
+    flex:0 0 auto!important;
+    border-radius:7px!important;
+    border:2px solid #9d8a5b!important;
+    background:
+        linear-gradient(
+            145deg,
+            #fffef5,
+            #e5d9ae
+        )!important;
+    font-size:21px!important;
+    box-shadow:0 5px 10px #0009!important;
+}
+
+
+/* =========================================================
+   TAVLA - GERÇEK TAHTA DÜZENİ
+========================================================= */
+
+.table-game:has(.tavla-board){
+    min-height:760px!important;
+    background:
+        radial-gradient(
+            ellipse at center,
+            #0d7140,
+            #07351f
+        )!important;
+}
+
+.tavla-board{
+    width:100%!important;
+    max-width:1080px!important;
+    min-height:500px!important;
+    margin:30px auto!important;
+    padding:25px!important;
+    box-sizing:border-box!important;
+    display:grid!important;
+    grid-template-columns:repeat(12,1fr)!important;
+    gap:0!important;
+    position:relative!important;
+    border:18px solid #4a220d!important;
+    border-radius:18px!important;
+    background:
+        linear-gradient(
+            90deg,
+            #743817,
+            #bd7432,
+            #743817
+        )!important;
+    box-shadow:
+        inset 0 0 45px #000b,
+        0 20px 40px #0009!important;
+}
+
+.tavla-point{
+    min-height:450px!important;
+    height:450px!important;
+    box-sizing:border-box!important;
+    padding:10px 3px!important;
+    border-radius:0!important;
+    background:
+        linear-gradient(
+            180deg,
+            #d59b4d,
+            #8c461f
+        )!important;
+    border-left:2px solid rgba(60,25,5,.45)!important;
+    border-right:2px solid rgba(255,220,150,.12)!important;
+}
+
+.tavla-point:nth-child(3n){
+    background:
+        linear-gradient(
+            180deg,
+            #e2bd6d,
+            #9b5625
+        )!important;
+}
+
+.tavla-checker{
+    width:min(65px,4.8vw)!important;
+    height:min(65px,4.8vw)!important;
+    min-width:25px!important;
+    min-height:25px!important;
+    margin:-1px 0!important;
+    border:3px solid #292929!important;
+    z-index:3!important;
+}
+
+.tavla-number{
+    color:#fff!important;
+    font-weight:800!important;
+    text-shadow:0 2px 3px #000!important;
+    z-index:5!important;
+}
+
+.dice-row{
+    position:relative!important;
+    z-index:50!important;
+    min-height:70px!important;
+}
+
+
+/* =========================================================
+   DAMA - TAHTA TAM ORTADA
+========================================================= */
+
+.table-game:has(.dama-board){
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:center!important;
+    min-height:760px!important;
+}
+
+.table-game:has(.dama-board) .table-title{
+    width:100%!important;
+}
+
+.dama-board{
+    width:min(680px,90vw)!important;
+    height:min(680px,90vw)!important;
+    aspect-ratio:1 / 1!important;
+    flex:none!important;
+    margin:35px auto 25px auto!important;
+    padding:0!important;
+    display:grid!important;
+    grid-template-columns:repeat(8,1fr)!important;
+    grid-template-rows:repeat(8,1fr)!important;
+    border:14px solid #321508!important;
+    box-sizing:border-box!important;
+    background:#3b1b0c!important;
+    box-shadow:
+        0 25px 45px #000b,
+        inset 0 0 20px #0009!important;
+    overflow:hidden!important;
+}
+
+.dama-cell{
+    width:100%!important;
+    height:100%!important;
+    min-width:0!important;
+    min-height:0!important;
+    box-sizing:border-box!important;
+}
+
+.dama-cell:nth-child(odd){
+    background:#e3c17f!important;
+}
+
+.dama-cell:nth-child(even){
+    background:#75411f!important;
+}
+
+.dama-piece{
+    width:78%!important;
+    height:78%!important;
+    max-width:58px!important;
+    max-height:58px!important;
+    border-radius:50%!important;
+    box-sizing:border-box!important;
+    border:4px solid #292929!important;
+    box-shadow:
+        inset 0 4px 5px rgba(255,255,255,.25),
+        0 6px 10px #000b!important;
+    z-index:10!important;
+}
+
+.dama-piece.white{
+    background:
+        radial-gradient(
+            circle at 30% 25%,
+            #ffffff 0%,
+            #e4e4e4 40%,
+            #999 100%
+        )!important;
+}
+
+.dama-piece.black{
+    background:
+        radial-gradient(
+            circle at 30% 25%,
+            #686868 0%,
+            #252525 45%,
+            #050505 100%
+        )!important;
+}
+
+.dama-piece.king{
+    box-shadow:
+        0 0 0 4px #d4a63a,
+        inset 0 4px 5px rgba(255,255,255,.25),
+        0 7px 12px #000b!important;
+}
+
+.dama-piece.king::after{
+    font-size:clamp(16px,3vw,28px)!important;
+}
+
+
+/* =========================================================
+   BATAK - 4 KİŞİLİK MASA
+========================================================= */
+
+.batak-table{
+    min-height:720px!important;
+    display:flex!important;
+    flex-direction:column!important;
+    position:relative!important;
+    background:
+        radial-gradient(
+            ellipse at center,
+            #137a48,
+            #0a492c 55%,
+            #042719
+        )!important;
+}
+
+.batak-seats{
+    width:100%!important;
+    min-height:380px!important;
+    flex:1!important;
+    display:grid!important;
+    grid-template-columns:1fr 1fr 1fr!important;
+    grid-template-rows:1fr 1fr 1fr!important;
+    gap:15px!important;
+    align-items:center!important;
+    justify-items:center!important;
+    position:relative!important;
+}
+
+.batak-seat{
+    min-width:150px!important;
+    min-height:75px!important;
+    padding:12px 18px!important;
+    background:rgba(0,0,0,.32)!important;
+    border:2px solid rgba(255,255,255,.12)!important;
+    border-radius:18px!important;
+    box-shadow:0 8px 20px #0007!important;
+}
+
+.batak-center{
+    grid-column:2!important;
+    grid-row:2!important;
+    min-height:220px!important;
+    width:100%!important;
+    border-radius:30px!important;
+    background:rgba(0,0,0,.12)!important;
+    display:flex!important;
+    justify-content:center!important;
+    align-items:center!important;
+    gap:15px!important;
+}
+
+.playing-card{
+    width:68px!important;
+    height:98px!important;
+    border-radius:9px!important;
+    box-shadow:0 7px 14px #0009!important;
+}
+
+
+/* =========================================================
+   MOBİL
+========================================================= */
+
+@media(max-width:700px){
+
+    .table-game,
+    .batak-table,
+    .okey-table-real{
+        padding:10px!important;
+        border-width:7px!important;
+        border-radius:18px!important;
+        min-height:620px!important;
+    }
+
+    .dama-board{
+        width:92vw!important;
+        height:92vw!important;
+        border-width:7px!important;
+        margin:20px auto!important;
+    }
+
+    .dama-piece{
+        border-width:2px!important;
+    }
+
+    .tavla-board{
+        padding:8px!important;
+        border-width:8px!important;
+        overflow:hidden!important;
+    }
+
+    .tavla-point{
+        height:300px!important;
+        min-height:300px!important;
+    }
+
+    .tavla-checker{
+        width:clamp(18px,5vw,34px)!important;
+        height:clamp(18px,5vw,34px)!important;
+        min-width:18px!important;
+        min-height:18px!important;
+    }
+
+    .okey-tile{
+        width:29px!important;
+        height:44px!important;
+        font-size:15px!important;
+    }
+
+    .okey-middle{
+        gap:8px!important;
+    }
+
+    .batak-seats{
+        min-height:320px!important;
+    }
+
+    .playing-card{
+        width:45px!important;
+        height:68px!important;
+    }
+}
+
+`;
 document.head.appendChild(style);
 
 /* =========================================================

@@ -1,5138 +1,3117 @@
-/* =========================================================
-   OYNAKAZAN - 15 OYUN
-   TAM OYUN MOTORU
-   MASA OYUNLARI GELİŞTİRİLMİŞ SÜRÜM
-   ========================================================= */
+/* ============================================================
+   OKEY GERÇEK MASA - 1. PARÇA
+   4 OYUNCULU 101 OKEY
+   ============================================================ */
 
-document.addEventListener("DOMContentLoaded", () => {
+(function(){
+
 "use strict";
 
-/* =========================================================
-   AYARLAR
-========================================================= */
+window.OYNAKAZAN_REAL_OKEY = {
+
+    version: "1.0",
+
+    state: {
+        players: [],
+        deck: [],
+        discard: [],
+        currentPlayer: 0,
+        selectedTile: null,
+        started: false,
+        message: "Oyun hazırlanıyor..."
+    },
+
+    colors: [
+        {
+            id: "red",
+            name: "Kırmızı",
+            className: "okey-red"
+        },
+        {
+            id: "blue",
+            name: "Mavi",
+            className: "okey-blue"
+        },
+        {
+            id: "black",
+            name: "Siyah",
+            className: "okey-black"
+        },
+        {
+            id: "yellow",
+            name: "Sarı",
+            className: "okey-yellow"
+        }
+    ],
+
+    init: function(){
+
+        this.createStyles();
+
+        this.state.players = [
+
+            {
+                id: 0,
+                name: "Sen",
+                position: "bottom",
+                hand: [],
+                bot: false
+            },
+
+            {
+                id: 1,
+                name: "Ali",
+                position: "top",
+                hand: [],
+                bot: true
+            },
+
+            {
+                id: 2,
+                name: "Ayşe",
+                position: "left",
+                hand: [],
+                bot: true
+            },
+
+            {
+                id: 3,
+                name: "Mehmet",
+                position: "right",
+                hand: [],
+                bot: true
+            }
 
-const START_SCORE = 500;
-const ENTRY_COST = 50;
-const WIN_REWARD = 100;
-const LOSS_REWARD = -50;
-const AD_REWARD = 100;
-
-const SCORE_KEY = "oynakazan_score";
-
-let score = Number(localStorage.getItem(SCORE_KEY));
-
-if (!Number.isFinite(score)) {
-    score = START_SCORE;
-    localStorage.setItem(SCORE_KEY, score);
-}
-
-/* =========================================================
-   ELEMENTLER
-========================================================= */
-
-const gamesContainer = document.getElementById("games-container");
-const gameModal = document.getElementById("game-modal");
-const gameArea = document.getElementById("game-area");
-const modalTitle = document.getElementById("modal-game-title");
-const modalCategory = document.getElementById("modal-category");
-const closeBtn = document.getElementById("close-modal-btn");
-
-const messageModal = document.getElementById("message-modal");
-const messageIcon = document.getElementById("message-icon");
-const messageTitle = document.getElementById("message-title");
-const messageText = document.getElementById("message-text");
-const messageClose = document.getElementById("message-close");
-
-const scoreElement = document.getElementById("user-score");
-const adButton = document.getElementById("watch-ad-btn");
-
-/* =========================================================
-   OYUN EKRANI GARANTİ CSS
-========================================================= */
-
-const style = document.createElement("style");
-
-style.textContent = `
-html,body{
-    width:100%;
-    min-height:100%;
-    overflow-x:hidden!important;
-}
-
-body{
-    overflow-y:auto!important;
-}
-
-#game-modal{
-    position:fixed!important;
-    inset:0!important;
-    width:100vw!important;
-    height:100dvh!important;
-    min-height:100dvh!important;
-    max-height:none!important;
-    padding:12px!important;
-    display:flex!important;
-    align-items:flex-start!important;
-    justify-content:center!important;
-    overflow-y:auto!important;
-    overflow-x:hidden!important;
-    z-index:99999!important;
-}
-
-#game-modal.hidden{
-    display:none!important;
-}
-
-#game-modal .modal-content{
-    width:min(1250px,96vw)!important;
-    max-width:1250px!important;
-    height:auto!important;
-    max-height:none!important;
-    min-height:0!important;
-    margin:0 auto 20px!important;
-    overflow:visible!important;
-}
-
-#game-modal .game-area{
-    width:100%!important;
-    max-width:100%!important;
-    height:auto!important;
-    min-height:0!important;
-    max-height:none!important;
-    overflow:visible!important;
-}
-
-.game-shell{
-    width:100%;
-    max-width:1200px;
-    margin:auto;
-    padding:8px;
-}
-
-.game-toolbar{
-    display:flex;
-    flex-wrap:wrap;
-    justify-content:center;
-    align-items:center;
-    gap:10px;
-    margin:14px 0;
-}
-
-.game-button{
-    border:0;
-    border-radius:12px;
-    padding:11px 18px;
-    background:linear-gradient(135deg,#6c63ff,#00a9d6);
-    color:white;
-    font-weight:800;
-    cursor:pointer;
-    box-shadow:0 4px 12px #0005;
-}
-
-.game-button:hover{
-    transform:translateY(-2px);
-    filter:brightness(1.12);
-}
-
-.game-button:disabled{
-    opacity:.45;
-    cursor:not-allowed;
-}
-
-.game-info{
-    background:rgba(255,255,255,.07);
-    border:1px solid rgba(255,255,255,.08);
-    border-radius:12px;
-    padding:10px;
-    margin:9px 0;
-    text-align:center;
-    color:#e7ebff;
-}
-
-.table-game,
-.batak-table{
-    position:relative;
-    width:100%;
-    min-height:520px;
-    padding:18px;
-    border:12px solid #553015;
-    border-radius:28px;
-    background:
-        radial-gradient(circle at center,#197b49,#0a452c 65%,#05291a);
-    box-shadow:
-        inset 0 0 50px #0009,
-        0 20px 50px #0008;
-}
-
-.table-title{
-    text-align:center;
-    color:#fff;
-    font-size:24px;
-    font-weight:900;
-    margin-bottom:12px;
-    text-shadow:0 3px 5px #000;
-}
-
-/* =========================================================
-   KARTLAR
-========================================================= */
-
-.game-card{
-    display:flex!important;
-    flex-direction:column!important;
-    align-items:center!important;
-    min-height:245px;
-    padding:22px 16px!important;
-    border-radius:20px!important;
-    background:linear-gradient(145deg,#151d38,#0c1225)!important;
-    border:1px solid rgba(255,255,255,.12)!important;
-    color:#fff!important;
-    text-align:center;
-    box-shadow:0 10px 30px #0005;
-}
-
-.game-card-icon{
-    width:78px;
-    height:78px;
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    border-radius:22px;
-    background:linear-gradient(145deg,#6c63ff,#4239c7);
-    font-size:42px;
-    margin-bottom:12px;
-}
-
-.game-card h3{
-    color:#fff!important;
-    margin:4px 0 8px!important;
-}
-
-.game-card p{
-    color:#b9c2dd!important;
-    min-height:42px;
-}
-
-.game-card-btn{
-    margin-top:auto;
-    width:100%;
-    border:0;
-    border-radius:12px;
-    padding:12px;
-    background:linear-gradient(135deg,#6c63ff,#00a9d6);
-    color:#fff;
-    font-weight:800;
-    cursor:pointer;
-}
-
-/* =========================================================
-   OKEY
-========================================================= */
-
-.okey-table{
-    background:
-        radial-gradient(circle at center,#16804b,#0b492d 65%,#05291b);
-}
-
-.okey-opponents{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:12px;
-}
-
-.okey-opponent{
-    padding:10px;
-    background:#0005;
-    border:1px solid #ffffff18;
-    border-radius:14px;
-    text-align:center;
-}
-
-.okey-avatar{
-    font-size:30px;
-}
-
-.okey-hidden{
-    display:flex;
-    justify-content:center;
-    flex-wrap:wrap;
-    gap:3px;
-    margin-top:7px;
-}
-
-.okey-back{
-    width:21px;
-    height:31px;
-    border-radius:5px;
-    border:2px solid #e7c765;
-    background:
-        repeating-linear-gradient(
-            45deg,
-            #9c1736 0,
-            #9c1736 4px,
-            #4b1020 4px,
-            #4b1020 8px
-        );
-}
-
-.okey-center{
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:25px;
-    flex-wrap:wrap;
-    margin:18px 0;
-}
-
-.okey-pile{
-    width:76px;
-    height:100px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border-radius:9px;
-    border:4px solid #c69d4e;
-    background:#f8f0d2;
-    color:#222;
-    font-size:27px;
-    font-weight:900;
-    box-shadow:0 6px 14px #0008;
-}
-
-.okey-rack{
-    display:flex;
-    justify-content:center;
-    align-items:flex-end;
-    flex-wrap:wrap;
-    gap:4px;
-    padding:14px 9px;
-    min-height:105px;
-    background:#704019;
-    border:6px solid #42200d;
-    border-radius:15px;
-    box-shadow:inset 0 0 20px #0008;
-}
-
-.okey-tile{
-    width:38px;
-    height:57px;
-    border-radius:6px;
-    border:2px solid #bba468;
-    background:linear-gradient(#fffdf2,#e6dab2);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:#222;
-    font-weight:900;
-    font-size:20px;
-    cursor:pointer;
-    box-shadow:0 3px 6px #0007;
-    transition:.15s;
-    user-select:none;
-}
-
-.okey-tile.red{color:#d12636}
-.okey-tile.black{color:#222}
-.okey-tile.blue{color:#1769aa}
-.okey-tile.green{color:#16844a}
-.okey-tile.joker{color:#7c35c8}
-
-.okey-tile:hover{
-    transform:translateY(-5px);
-}
-
-.okey-tile.selected{
-    transform:translateY(-13px);
-    outline:3px solid #ffd166;
-}
-
-.player-name{
-    text-align:center;
-    color:#ffd166;
-    font-weight:900;
-    margin:8px;
-}
-
-/* =========================================================
-   TAVLA
-========================================================= */
-
-.tavla-board{
-    width:min(100%,980px);
-    margin:auto;
-    padding:12px;
-    border:12px solid #351708;
-    border-radius:18px;
-    background:
-        linear-gradient(90deg,#7b431d,#ad672d,#7b431d);
-    display:grid;
-    grid-template-columns:repeat(12,1fr);
-    gap:5px;
-    box-shadow:inset 0 0 30px #0008,0 15px 35px #0008;
-}
-
-.tavla-point{
-    min-height:205px;
-    position:relative;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    padding-top:8px;
-    border-radius:5px;
-    background:linear-gradient(90deg,#d7a658,#925628);
-    cursor:pointer;
-}
-
-.tavla-point:nth-child(3n){
-    background:linear-gradient(90deg,#e4bb70,#a96732);
-}
-
-.tavla-point:hover{
-    filter:brightness(1.12);
-}
-
-.tavla-number{
-    position:absolute;
-    top:3px;
-    font-size:10px;
-    opacity:.7;
-}
-
-.tavla-checker{
-    width:38px;
-    height:38px;
-    flex:none;
-    border-radius:50%;
-    border:3px solid #333;
-    margin:1px;
-    box-shadow:0 3px 6px #0008;
-}
-
-.tavla-checker.white{
-    background:radial-gradient(circle at 30% 25%,#fff,#aaa);
-}
-
-.tavla-checker.black{
-    background:radial-gradient(circle at 30% 25%,#555,#111);
-}
-
-.tavla-checker.moving{
-    animation:pulseChecker .5s;
-}
-
-@keyframes pulseChecker{
-    50%{transform:scale(1.12)}
-}
-
-.dice-row{
-    display:flex;
-    justify-content:center;
-    gap:12px;
-    margin:12px;
-}
-
-.die{
-    width:58px;
-    height:58px;
-    border:0;
-    border-radius:12px;
-    background:#fff;
-    color:#111;
-    font-size:30px;
-    font-weight:900;
-    cursor:pointer;
-    box-shadow:0 5px 12px #0008;
-}
-
-.die.selected{
-    outline:4px solid #ffd166;
-    transform:translateY(-4px);
-}
-
-/* =========================================================
-   DAMA
-========================================================= */
-
-.dama-board{
-    width:min(650px,100%);
-    margin:auto;
-    aspect-ratio:1;
-    display:grid;
-    grid-template-columns:repeat(8,1fr);
-    border:10px solid #522b12;
-    box-shadow:0 12px 30px #0008;
-}
-
-.dama-cell{
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    position:relative;
-    cursor:pointer;
-}
-
-.dama-cell:nth-child(odd){
-    background:#e1bb77;
-}
-
-.dama-cell:nth-child(even){
-    background:#94572c;
-}
-
-.dama-piece{
-    width:74%;
-    aspect-ratio:1;
-    border-radius:50%;
-    border:4px solid #444;
-    box-shadow:0 5px 9px #0009;
-}
-
-.dama-piece.white{
-    background:radial-gradient(circle at 30% 25%,#fff,#aaa);
-}
-
-.dama-piece.black{
-    background:radial-gradient(circle at 30% 25%,#555,#111);
-}
-
-.dama-piece.king{
-    box-shadow:
-        0 0 0 4px #ffd166,
-        0 5px 10px #0009;
-}
-
-.dama-piece.king::after{
-    content:"♛";
-    color:#ffd166;
-    font-size:25px;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100%;
-}
-
-.dama-cell.selected{
-    outline:5px solid #ffd166;
-    outline-offset:-5px;
-}
-
-.dama-cell.target{
-    box-shadow:inset 0 0 0 5px #00d4ff;
-}
-
-/* =========================================================
-   BATAK
-========================================================= */
-
-.batak-table{
-    min-height:620px;
-}
-
-.batak-seats{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:10px;
-}
-
-.batak-seat{
-    padding:10px;
-    border-radius:13px;
-    background:#0005;
-    text-align:center;
-}
-
-.card-back{
-    width:22px;
-    height:34px;
-    display:inline-block;
-    margin:2px;
-    border:2px solid #fff;
-    border-radius:5px;
-    background:
-        repeating-linear-gradient(
-            45deg,
-            #293e96 0,
-            #293e96 4px,
-            #15235c 4px,
-            #15235c 8px
-        );
-}
-
-.batak-center{
-    min-height:190px;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    gap:12px;
-    flex-wrap:wrap;
-}
-
-.playing-card{
-    width:60px;
-    height:88px;
-    display:flex;
-    flex-direction:column;
-    justify-content:center;
-    align-items:center;
-    background:linear-gradient(#fff,#e8e8e8);
-    color:#111;
-    border-radius:8px;
-    border:2px solid #ddd;
-    box-shadow:0 5px 10px #0009;
-    font-size:19px;
-    font-weight:900;
-    cursor:pointer;
-    transition:.15s;
-}
-
-.playing-card.red{
-    color:#c62828;
-}
-
-.playing-card:hover{
-    transform:translateY(-8px);
-}
-
-.card-hand{
-    display:flex;
-    justify-content:center;
-    flex-wrap:wrap;
-    gap:6px;
-}
-
-/* =========================================================
-   BİLARDO
-========================================================= */
-
-.pool-table{
-    width:min(950px,100%);
-    aspect-ratio:2/1;
-    margin:15px auto;
-    position:relative;
-    border:22px solid #6c401e;
-    border-radius:28px;
-    background:
-        radial-gradient(ellipse at center,#087747,#075d39 70%);
-    box-shadow:
-        inset 0 0 35px #0009,
-        0 15px 35px #0008;
-    overflow:hidden;
-}
-
-.pool-pocket{
-    position:absolute;
-    width:52px;
-    height:52px;
-    border-radius:50%;
-    background:#050505;
-    box-shadow:inset 0 0 12px #000;
-    z-index:2;
-}
-
-.pool-ball{
-    position:absolute;
-    width:31px;
-    height:31px;
-    border:2px solid #fff;
-    border-radius:50%;
-    cursor:pointer;
-    box-shadow:0 4px 7px #0009;
-    z-index:5;
-    transition:.3s;
-}
-
-.pool-ball.hit{
-    animation:ballHit .5s ease forwards;
-}
-
-@keyframes ballHit{
-    0%{transform:scale(1)}
-    35%{transform:scale(1.3)}
-    100%{transform:scale(.1);opacity:0}
-}
-
-/* =========================================================
-   DİĞER OYUNLAR
-========================================================= */
-
-.simple-area{
-    max-width:650px;
-    margin:auto;
-}
-
-.memory-grid{
-    display:grid;
-    grid-template-columns:repeat(4,1fr);
-    gap:8px;
-    max-width:500px;
-    margin:auto;
-}
-
-.memory-card{
-    aspect-ratio:1;
-    border:0;
-    border-radius:12px;
-    background:#29366f;
-    color:#fff;
-    font-size:32px;
-    cursor:pointer;
-}
-
-.memory-card.open{
-    background:#fff;
-    color:#111;
-}
-
-.sudoku{
-    width:min(450px,100%);
-    margin:auto;
-    display:grid;
-    grid-template-columns:repeat(9,1fr);
-}
-
-.sudoku-cell{
-    aspect-ratio:1;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    border:1px solid #555;
-    background:#fff;
-    color:#111;
-    font-weight:800;
-    cursor:pointer;
-}
-
-.sudoku-cell.fixed{
-    background:#ddd;
-}
-
-.bubbles{
-    display:grid;
-    grid-template-columns:repeat(8,1fr);
-    gap:7px;
-    max-width:600px;
-    margin:auto;
-}
-
-.bubble{
-    aspect-ratio:1;
-    border:0;
-    border-radius:50%;
-    cursor:pointer;
-}
-
-.race{
-    width:min(500px,100%);
-    height:420px;
-    margin:auto;
-    position:relative;
-    overflow:hidden;
-    background:
-        repeating-linear-gradient(
-            90deg,
-            #343434 0,
-            #343434 47%,
-            #555 47%,
-            #555 53%
-        );
-    border:8px solid #202020;
-}
-
-.race-car,
-.race-enemy{
-    position:absolute;
-    width:45px;
-    height:72px;
-    border-radius:12px;
-}
-
-.race-car{
-    bottom:15px;
-    background:#e53935;
-}
-
-.race-enemy{
-    background:#2196f3;
-}
-
-.block-grid{
-    width:min(420px,100%);
-    margin:auto;
-    display:grid;
-    grid-template-columns:repeat(8,1fr);
-    gap:4px;
-}
-
-.block-cell{
-    aspect-ratio:1;
-    background:#1a2442;
-    border-radius:5px;
-}
-
-.block-cell.filled{
-    background:#6c63ff;
-}
-
-.target-area{
-    width:min(650px,100%);
-    height:350px;
-    margin:auto;
-    position:relative;
-    background:#18233f;
-    border-radius:15px;
-    overflow:hidden;
-}
-
-.target{
-    position:absolute;
-    width:70px;
-    height:70px;
-    border:0;
-    border-radius:50%;
-    background:
-        radial-gradient(
-            circle,
-            #fff 0 10%,
-            #e53935 11% 30%,
-            #fff 31% 50%,
-            #e53935 51% 70%,
-            #fff 71%
-        );
-    cursor:pointer;
-}
-
-.snake-board{
-    width:min(500px,100%);
-    aspect-ratio:1;
-    margin:auto;
-    display:grid;
-    grid-template-columns:repeat(20,1fr);
-    background:#10172b;
-    border:8px solid #2f3d69;
-}
-
-.snake-cell{
-    aspect-ratio:1;
-}
-
-.snake-body{
-    background:#39d353;
-}
-
-.snake-head{
-    background:#8aff80;
-    border-radius:4px;
-}
-
-.snake-food{
-    background:#ff5252;
-    border-radius:50%;
-}
-
-/* =========================================================
-   RESPONSIVE
-========================================================= */
-
-@media(max-width:900px){
-
-    .tavla-point{
-        min-height:170px;
-    }
-
-    .tavla-checker{
-        width:31px;
-        height:31px;
-    }
-
-    .pool-table{
-        border-width:16px;
-    }
-
-    .pool-pocket{
-        width:42px;
-        height:42px;
-    }
-
-    .pool-ball{
-        width:27px;
-        height:27px;
-    }
-}
-
-@media(max-width:650px){
-
-    .okey-opponents{
-        grid-template-columns:1fr;
-    }
-
-    .batak-seats{
-        grid-template-columns:1fr;
-    }
-
-    .tavla-board{
-        gap:2px;
-        padding:7px;
-        border-width:7px;
-    }
-
-    .tavla-point{
-        min-height:130px;
-    }
-
-    .tavla-checker{
-        width:25px;
-        height:25px;
-        border-width:2px;
-    }
-
-    .dama-board{
-        border-width:6px;
-    }
-
-    .dama-piece{
-        border-width:2px;
-    }
-}
-
-@media(max-width:420px){
-
-    .okey-tile{
-        width:25px;
-        height:38px;
-        font-size:13px;
-    }
-
-    .tavla-point{
-        min-height:100px;
-    }
-
-    .tavla-checker{
-        width:20px;
-        height:20px;
-    }
-}
-`;
-/* =========================================================
-   GERÇEK MASA GÖRÜNÜMÜ - SON TASARIM PAKETİ
-========================================================= */
-
-style.textContent += `
-
-/* ---------- GENEL MASA ---------- */
-
-.game-shell{
-    width:100%!important;
-    max-width:1180px!important;
-    margin:0 auto!important;
-    padding:0!important;
-}
-
-.table-game,
-.batak-table{
-    width:100%!important;
-    max-width:1150px!important;
-    margin:0 auto!important;
-    box-sizing:border-box!important;
-    min-height:700px!important;
-    padding:28px!important;
-    border:16px solid #3b1c0b!important;
-    border-radius:32px!important;
-    overflow:hidden!important;
-    background:
-        radial-gradient(
-            ellipse at center,
-            #18804d 0%,
-            #0d5937 45%,
-            #06351f 100%
-        )!important;
-    box-shadow:
-        inset 0 0 70px rgba(0,0,0,.75),
-        0 25px 60px rgba(0,0,0,.65)!important;
-}
-
-
-/* =========================================================
-   101 OKEY
-========================================================= */
-
-.okey-premium-shell{
-    width:100%!important;
-}
-
-.okey-table-real{
-    width:100%!important;
-    min-height:720px!important;
-    box-sizing:border-box!important;
-    border-radius:30px!important;
-    padding:25px!important;
-    background:
-        radial-gradient(
-            ellipse at center,
-            #147c49 0%,
-            #0b502f 50%,
-            #06321e 100%
-        )!important;
-    border:15px solid #3b1c0b!important;
-    box-shadow:
-        inset 0 0 70px #000b,
-        0 25px 60px #0009!important;
-}
-
-.okey-table-center{
-    min-height:430px!important;
-    display:flex!important;
-    flex-direction:column!important;
-    justify-content:center!important;
-    position:relative!important;
-}
-
-.okey-middle{
-    min-height:230px!important;
-    display:flex!important;
-    align-items:center!important;
-    justify-content:center!important;
-    gap:35px!important;
-}
-
-.okey-seat{
-    z-index:5!important;
-}
-
-.okey-pile-box{
-    background:rgba(0,0,0,.28)!important;
-    border:2px solid rgba(255,255,255,.14)!important;
-    border-radius:18px!important;
-    padding:14px!important;
-    box-shadow:0 10px 25px #0007!important;
-}
-
-.okey-big-tile{
-    width:70px!important;
-    height:100px!important;
-    border-radius:9px!important;
-    border:4px solid #c99f4d!important;
-    background:linear-gradient(#fffef4,#dfd2a9)!important;
-    box-shadow:0 8px 18px #0009!important;
-}
-
-.okey-rack{
-    position:relative!important;
-    z-index:20!important;
-    width:100%!important;
-    box-sizing:border-box!important;
-    min-height:115px!important;
-    margin-top:15px!important;
-    padding:15px!important;
-    border:7px solid #351707!important;
-    border-radius:18px!important;
-    background:
-        linear-gradient(
-            #75451e,
-            #4c260f
-        )!important;
-    box-shadow:
-        inset 0 0 25px #000b,
-        0 10px 25px #0008!important;
-}
-
-.okey-tile{
-    width:42px!important;
-    height:62px!important;
-    flex:0 0 auto!important;
-    border-radius:7px!important;
-    border:2px solid #9d8a5b!important;
-    background:
-        linear-gradient(
-            145deg,
-            #fffef5,
-            #e5d9ae
-        )!important;
-    font-size:21px!important;
-    box-shadow:0 5px 10px #0009!important;
-}
-
-
-/* =========================================================
-   TAVLA - GERÇEK TAHTA DÜZENİ
-========================================================= */
-
-.table-game:has(.tavla-board){
-    min-height:760px!important;
-    background:
-        radial-gradient(
-            ellipse at center,
-            #0d7140,
-            #07351f
-        )!important;
-}
-
-.tavla-board{
-    width:100%!important;
-    max-width:1080px!important;
-    min-height:500px!important;
-    margin:30px auto!important;
-    padding:25px!important;
-    box-sizing:border-box!important;
-    display:grid!important;
-    grid-template-columns:repeat(12,1fr)!important;
-    gap:0!important;
-    position:relative!important;
-    border:18px solid #4a220d!important;
-    border-radius:18px!important;
-    background:
-        linear-gradient(
-            90deg,
-            #743817,
-            #bd7432,
-            #743817
-        )!important;
-    box-shadow:
-        inset 0 0 45px #000b,
-        0 20px 40px #0009!important;
-}
-
-.tavla-point{
-    min-height:450px!important;
-    height:450px!important;
-    box-sizing:border-box!important;
-    padding:10px 3px!important;
-    border-radius:0!important;
-    background:
-        linear-gradient(
-            180deg,
-            #d59b4d,
-            #8c461f
-        )!important;
-    border-left:2px solid rgba(60,25,5,.45)!important;
-    border-right:2px solid rgba(255,220,150,.12)!important;
-}
-
-.tavla-point:nth-child(3n){
-    background:
-        linear-gradient(
-            180deg,
-            #e2bd6d,
-            #9b5625
-        )!important;
-}
-
-.tavla-checker{
-    width:min(65px,4.8vw)!important;
-    height:min(65px,4.8vw)!important;
-    min-width:25px!important;
-    min-height:25px!important;
-    margin:-1px 0!important;
-    border:3px solid #292929!important;
-    z-index:3!important;
-}
-
-.tavla-number{
-    color:#fff!important;
-    font-weight:800!important;
-    text-shadow:0 2px 3px #000!important;
-    z-index:5!important;
-}
-
-.dice-row{
-    position:relative!important;
-    z-index:50!important;
-    min-height:70px!important;
-}
-
-
-/* =========================================================
-   DAMA - TAHTA TAM ORTADA
-========================================================= */
-
-.table-game:has(.dama-board){
-    display:flex!important;
-    flex-direction:column!important;
-    align-items:center!important;
-    min-height:760px!important;
-}
-
-.table-game:has(.dama-board) .table-title{
-    width:100%!important;
-}
-
-.dama-board{
-    width:min(680px,90vw)!important;
-    height:min(680px,90vw)!important;
-    aspect-ratio:1 / 1!important;
-    flex:none!important;
-    margin:35px auto 25px auto!important;
-    padding:0!important;
-    display:grid!important;
-    grid-template-columns:repeat(8,1fr)!important;
-    grid-template-rows:repeat(8,1fr)!important;
-    border:14px solid #321508!important;
-    box-sizing:border-box!important;
-    background:#3b1b0c!important;
-    box-shadow:
-        0 25px 45px #000b,
-        inset 0 0 20px #0009!important;
-    overflow:hidden!important;
-}
-
-.dama-cell{
-    width:100%!important;
-    height:100%!important;
-    min-width:0!important;
-    min-height:0!important;
-    box-sizing:border-box!important;
-}
-
-.dama-cell:nth-child(odd){
-    background:#e3c17f!important;
-}
-
-.dama-cell:nth-child(even){
-    background:#75411f!important;
-}
-
-.dama-piece{
-    width:78%!important;
-    height:78%!important;
-    max-width:58px!important;
-    max-height:58px!important;
-    border-radius:50%!important;
-    box-sizing:border-box!important;
-    border:4px solid #292929!important;
-    box-shadow:
-        inset 0 4px 5px rgba(255,255,255,.25),
-        0 6px 10px #000b!important;
-    z-index:10!important;
-}
-
-.dama-piece.white{
-    background:
-        radial-gradient(
-            circle at 30% 25%,
-            #ffffff 0%,
-            #e4e4e4 40%,
-            #999 100%
-        )!important;
-}
-
-.dama-piece.black{
-    background:
-        radial-gradient(
-            circle at 30% 25%,
-            #686868 0%,
-            #252525 45%,
-            #050505 100%
-        )!important;
-}
-
-.dama-piece.king{
-    box-shadow:
-        0 0 0 4px #d4a63a,
-        inset 0 4px 5px rgba(255,255,255,.25),
-        0 7px 12px #000b!important;
-}
-
-.dama-piece.king::after{
-    font-size:clamp(16px,3vw,28px)!important;
-}
-
-
-/* =========================================================
-   BATAK - 4 KİŞİLİK MASA
-========================================================= */
-
-.batak-table{
-    min-height:720px!important;
-    display:flex!important;
-    flex-direction:column!important;
-    position:relative!important;
-    background:
-        radial-gradient(
-            ellipse at center,
-            #137a48,
-            #0a492c 55%,
-            #042719
-        )!important;
-}
-
-.batak-seats{
-    width:100%!important;
-    min-height:380px!important;
-    flex:1!important;
-    display:grid!important;
-    grid-template-columns:1fr 1fr 1fr!important;
-    grid-template-rows:1fr 1fr 1fr!important;
-    gap:15px!important;
-    align-items:center!important;
-    justify-items:center!important;
-    position:relative!important;
-}
-
-.batak-seat{
-    min-width:150px!important;
-    min-height:75px!important;
-    padding:12px 18px!important;
-    background:rgba(0,0,0,.32)!important;
-    border:2px solid rgba(255,255,255,.12)!important;
-    border-radius:18px!important;
-    box-shadow:0 8px 20px #0007!important;
-}
-
-.batak-center{
-    grid-column:2!important;
-    grid-row:2!important;
-    min-height:220px!important;
-    width:100%!important;
-    border-radius:30px!important;
-    background:rgba(0,0,0,.12)!important;
-    display:flex!important;
-    justify-content:center!important;
-    align-items:center!important;
-    gap:15px!important;
-}
-
-.playing-card{
-    width:68px!important;
-    height:98px!important;
-    border-radius:9px!important;
-    box-shadow:0 7px 14px #0009!important;
-}
-
-
-/* =========================================================
-   MOBİL
-========================================================= */
-
-@media(max-width:700px){
-
-    .table-game,
-    .batak-table,
-    .okey-table-real{
-        padding:10px!important;
-        border-width:7px!important;
-        border-radius:18px!important;
-        min-height:620px!important;
-    }
-
-    .dama-board{
-        width:92vw!important;
-        height:92vw!important;
-        border-width:7px!important;
-        margin:20px auto!important;
-    }
-
-    .dama-piece{
-        border-width:2px!important;
-    }
-
-    .tavla-board{
-        padding:8px!important;
-        border-width:8px!important;
-        overflow:hidden!important;
-    }
-
-    .tavla-point{
-        height:300px!important;
-        min-height:300px!important;
-    }
-
-    .tavla-checker{
-        width:clamp(18px,5vw,34px)!important;
-        height:clamp(18px,5vw,34px)!important;
-        min-width:18px!important;
-        min-height:18px!important;
-    }
-
-    .okey-tile{
-        width:29px!important;
-        height:44px!important;
-        font-size:15px!important;
-    }
-
-    .okey-middle{
-        gap:8px!important;
-    }
-
-    .batak-seats{
-        min-height:320px!important;
-    }
-
-    .playing-card{
-        width:45px!important;
-        height:68px!important;
-    }
-}
-
-`;
-document.head.appendChild(style);
-
-/* =========================================================
-   PUAN
-========================================================= */
-
-function updateScore(){
-    score=Math.max(0,Number(score)||0);
-    localStorage.setItem(SCORE_KEY,score);
-
-    if(scoreElement){
-        scoreElement.textContent=score;
-    }
-}
-
-function changeScore(amount){
-    score+=Number(amount)||0;
-    updateScore();
-}
-
-function showMessage(icon,title,text){
-    if(!messageModal)return;
-
-    messageIcon.textContent=icon;
-    messageTitle.textContent=title;
-    messageText.textContent=text;
-    messageModal.classList.remove("hidden");
-}
-
-function hideMessage(){
-    messageModal?.classList.add("hidden");
-}
-
-messageClose?.addEventListener("click",hideMessage);
-
-function win(name,points=WIN_REWARD){
-    changeScore(points);
-
-    showMessage(
-        "🏆",
-        "Tebrikler!",
-        `${name} oyununu kazandın! +${points} puan.`
-    );
-}
-
-function lose(name){
-    changeScore(LOSS_REWARD);
-
-    showMessage(
-        "😔",
-        "Oyun Bitti",
-        `${name} oyununu kaybettin. ${LOSS_REWARD} puan.`
-    );
-}
-
-/* =========================================================
-   YARDIMCILAR
-========================================================= */
-
-const botNames=[
-    "Ali","Mehmet","Ahmet","Burak",
-    "Murat","Emre","Can","Kerem",
-    "Hasan","Hakan","Efe","Oğuz"
-];
-
-function botName(){
-    return botNames[
-        Math.floor(Math.random()*botNames.length)
-    ];
-}
-
-function rand(min,max){
-    return Math.floor(
-        Math.random()*(max-min+1)
-    )+min;
-}
-
-function shuffle(arr){
-
-    for(let i=arr.length-1;i>0;i--){
-
-        const j=Math.floor(
-            Math.random()*(i+1)
-        );
-
-        [arr[i],arr[j]]=[
-            arr[j],arr[i]
         ];
-    }
 
-    return arr;
-}
+        this.createDeck();
 
-/* =========================================================
-   15 OYUN
-========================================================= */
+        this.shuffleDeck();
 
-const games=[
+        this.dealCards();
 
-    {
-        id:1,
-        name:"101 Okey",
-        icon:"🀄",
-        category:"board",
-        type:"okey",
-        description:"106 taşlık gerçek 101 Okey masası."
+        this.state.started = true;
+
+        this.state.message =
+            "Oyun başladı. Sıra sende.";
+
+        this.render();
+
     },
 
-    {
-        id:2,
-        name:"Klasik Tavla",
-        icon:"🎲",
-        category:"board",
-        type:"tavla",
-        description:"15 pullu klasik tavla."
-    },
 
-    {
-        id:3,
-        name:"Türk Daması",
-        icon:"⚫",
-        category:"board",
-        type:"dama",
-        description:"16 taşlı Türk Daması."
-    },
+    /* ========================================================
+       CSS
+       ======================================================== */
 
-    {
-        id:4,
-        name:"Batak",
-        icon:"🃏",
-        category:"cards",
-        type:"batak",
-        description:"4 kişilik kozlu Batak."
-    },
+    createStyles: function(){
 
-    {
-        id:5,
-        name:"Bilardo",
-        icon:"🎱",
-        category:"arcade",
-        type:"bilardo",
-        description:"Topları ceplere gönder."
-    },
-
-    {
-        id:6,
-        name:"Mahjong",
-        icon:"🀄",
-        category:"puzzle",
-        type:"mahjong",
-        description:"Aynı taşları eşleştir."
-    },
-
-    {
-        id:7,
-        name:"Sudoku",
-        icon:"🔢",
-        category:"puzzle",
-        type:"sudoku",
-        description:"9x9 Sudoku çöz."
-    },
-
-    {
-        id:8,
-        name:"Bubble Shooter",
-        icon:"🫧",
-        category:"arcade",
-        type:"bubble",
-        description:"Aynı renk baloncukları patlat."
-    },
-
-    {
-        id:9,
-        name:"Araba Yarışı",
-        icon:"🏎️",
-        category:"arcade",
-        type:"race",
-        description:"Rakiplerden kaç ve bitişe ulaş."
-    },
-
-    {
-        id:10,
-        name:"Block Puzzle",
-        icon:"🧱",
-        category:"puzzle",
-        type:"block",
-        description:"Blokları yerleştir."
-    },
-
-    {
-        id:11,
-        name:"Okçuluk",
-        icon:"🏹",
-        category:"arcade",
-        type:"archery",
-        description:"Hedefi tam ortadan vur."
-    },
-
-    {
-        id:12,
-        name:"Zeka Eşleştirme",
-        icon:"🧠",
-        category:"puzzle",
-        type:"memory",
-        description:"Kartların eşlerini bul."
-    },
-
-    {
-        id:13,
-        name:"Hafıza Oyunu",
-        icon:"🃏",
-        category:"puzzle",
-        type:"memory2",
-        description:"Hafızanı test et."
-    },
-
-    {
-        id:14,
-        name:"Yılan Oyunu",
-        icon:"🐍",
-        category:"arcade",
-        type:"snake",
-        description:"Yılanı büyüt."
-    },
-
-    {
-        id:15,
-        name:"Kelime Oyunu",
-        icon:"🔤",
-        category:"puzzle",
-        type:"word",
-        description:"Karışık harflerden kelimeyi bul."
-    }
-];
-
-/* =========================================================
-   OYUN KARTLARINI OLUŞTUR
-========================================================= */
-
-function renderGames(){
-
-    if(!gamesContainer)return;
-
-    gamesContainer.innerHTML=games.map(game=>`
-
-        <div
-            class="game-card"
-            data-game="${game.type}"
-        >
-
-            <div class="game-card-icon">
-                ${game.icon}
-            </div>
-
-            <h3>
-                ${game.name}
-            </h3>
-
-            <p>
-                ${game.description}
-            </p>
-
-            <button
-                class="game-card-btn"
-                data-open-game="${game.type}"
-            >
-                🎮 Oyunu Aç
-            </button>
-
-        </div>
-
-    `).join("");
-
-    gamesContainer
-        .querySelectorAll("[data-open-game]")
-        .forEach(button=>{
-
-            button.addEventListener(
-                "click",
-                ()=>openGame(button.dataset.openGame)
-            );
-
-        });
-}
-
-/* =========================================================
-   MODAL
-========================================================= */
-
-function openModal(){
-
-    if(gameModal){
-        gameModal.classList.remove("hidden");
-    }
-
-    document.body.classList.add("modal-open");
-}
-
-function closeModal(){
-
-    if(gameModal){
-        gameModal.classList.add("hidden");
-    }
-
-    document.body.classList.remove("modal-open");
-
-    if(gameArea){
-        gameArea.innerHTML="";
-    }
-}
-
-closeBtn?.addEventListener(
-    "click",
-    closeModal
-);
-
-gameModal?.addEventListener(
-    "click",
-    event=>{
-
-        if(event.target===gameModal){
-            closeModal();
+        if(document.getElementById(
+            "oynakazan-real-okey-style"
+        )){
+            return;
         }
 
-    }
-);
+        const style =
+            document.createElement("style");
 
-/* =========================================================
-   OYUN BAŞLAT
-========================================================= */
+        style.id =
+            "oynakazan-real-okey-style";
 
-function openGame(type){
+        style.textContent = `
 
-    const game=games.find(
-        item=>item.type===type
-    );
+        /* ====================================================
+           ANA OKEY MASASI
+           ==================================================== */
 
-    if(!game)return;
+        .real-okey-wrapper{
 
-    if(score<ENTRY_COST){
+            position:relative;
 
-        showMessage(
-            "💰",
-            "Yetersiz Puan",
-            `Oyuna girmek için ${ENTRY_COST} puan gerekiyor.`
-        );
+            width:100%;
 
-        return;
-    }
+            max-width:1250px;
 
-    changeScore(-ENTRY_COST);
+            min-height:820px;
 
-    if(modalTitle){
-        modalTitle.textContent=game.name;
-    }
+            margin:20px auto;
 
-    if(modalCategory){
-        modalCategory.textContent=
-            game.category;
-    }
+            padding:22px;
 
-    openModal();
+            box-sizing:border-box;
 
-    if(!gameArea)return;
+            border-radius:32px;
 
-    gameArea.innerHTML="";
+            background:
 
-    switch(type){
+                radial-gradient(
+                    ellipse at center,
+                    #17824b 0%,
+                    #10653b 38%,
+                    #0a4529 70%,
+                    #052817 100%
+                );
 
-        case "okey":
-            createOkey();
-            break;
+            border:
 
-        case "tavla":
-            createTavla();
-            break;
+                15px solid #351707;
 
-        case "dama":
-            createDama();
-            break;
+            box-shadow:
 
-        case "batak":
-            createBatak();
-            break;
+                inset
+                0 0 80px
+                rgba(0,0,0,.8),
 
-        case "bilardo":
-            createBilardo();
-            break;
+                inset
+                0 0 20px
+                rgba(255,255,255,.08),
 
-        case "mahjong":
-            createMahjong();
-            break;
+                0 30px 70px
+                rgba(0,0,0,.7);
 
-        case "sudoku":
-            createSudoku();
-            break;
+            color:#fff;
 
-        case "bubble":
-            createBubble();
-            break;
+            font-family:
 
-        case "race":
-            createRace();
-            break;
+                Arial,
+                Helvetica,
+                sans-serif;
 
-        case "block":
-            createBlock();
-            break;
+            overflow:hidden;
 
-        case "archery":
-            createArchery();
-            break;
-
-        case "memory":
-            createMemory();
-            break;
-
-        case "memory2":
-            createMemory2();
-            break;
-
-        case "snake":
-            createSnake();
-            break;
-
-        case "word":
-            createWord();
-            break;
-
-        default:
-            gameArea.innerHTML=`
-                <div class="game-info">
-                    Oyun hazırlanıyor...
-                </div>
-            `;
-    }
-}
-
-/* =========================================================
-   REKLAM ÖDÜLÜ
-========================================================= */
-
-adButton?.addEventListener(
-    "click",
-    ()=>{
-
-        changeScore(AD_REWARD);
-
-        showMessage(
-            "🎁",
-            "Ödül Kazandın",
-            `Reklam ödülü olarak +${AD_REWARD} puan kazandın.`
-        );
-
-        if(adButton){
-            adButton.disabled=true;
-
-            setTimeout(()=>{
-                adButton.disabled=false;
-            },30000);
         }
 
-    }
-);
 
-/* =========================================================
-   101 OKEY
-========================================================= */
+        /* ====================================================
+           AHŞAP ÇERÇEVE PARLAKLIĞI
+           ==================================================== */
 
-function createOkey(){
+        .real-okey-wrapper::before{
 
-    let finished=false;
-    let turn=true;
-    let selected=[];
-    let discard=[];
-    let deck=[];
-    let player=[];
-    let bots=[
-        [],
-        [],
-        []
-    ];
+            content:"";
 
-    const colors=[
-        {
-            name:"red",
-            symbol:"🔴"
-        },
-        {
-            name:"blue",
-            symbol:"🔵"
-        },
-        {
-            name:"black",
-            symbol:"⚫"
-        },
-        {
-            name:"green",
-            symbol:"🟢"
+            position:absolute;
+
+            inset:0;
+
+            pointer-events:none;
+
+            border-radius:18px;
+
+            box-shadow:
+
+                inset
+                0 0 0 2px
+                rgba(255,220,150,.16),
+
+                inset
+                0 0 40px
+                rgba(0,0,0,.55);
+
         }
-    ];
 
-    function createDeck(){
 
-        const result=[];
+        /* ====================================================
+           BAŞLIK
+           ==================================================== */
 
-        let id=0;
+        .real-okey-title{
 
-        colors.forEach(color=>{
+            position:relative;
 
-            for(let n=1;n<=13;n++){
+            z-index:10;
 
-                for(let copy=0;copy<2;copy++){
+            text-align:center;
 
-                    result.push({
-                        id:id++,
-                        number:n,
-                        color:color.name,
-                        symbol:color.symbol
+            font-size:27px;
+
+            font-weight:900;
+
+            letter-spacing:2px;
+
+            margin:
+
+                0 0
+                12px
+                0;
+
+            text-shadow:
+
+                0 3px 5px
+                rgba(0,0,0,.8);
+
+        }
+
+
+        .real-okey-subtitle{
+
+            text-align:center;
+
+            color:#c9e6d4;
+
+            font-size:13px;
+
+            margin-bottom:12px;
+
+        }
+
+
+        /* ====================================================
+           OYUNCU ALANLARI
+           ==================================================== */
+
+        .real-okey-player{
+
+            position:absolute;
+
+            z-index:30;
+
+            min-width:155px;
+
+            padding:10px;
+
+            border-radius:18px;
+
+            background:
+
+                linear-gradient(
+                    145deg,
+                    rgba(25,25,25,.9),
+                    rgba(5,5,5,.78)
+                );
+
+            border:
+
+                2px solid
+                rgba(255,255,255,.13);
+
+            box-shadow:
+
+                0 10px 25px
+                rgba(0,0,0,.55);
+
+            text-align:center;
+
+            transition:
+
+                .25s ease;
+
+        }
+
+
+        .real-okey-player.active{
+
+            border-color:#ffd84d;
+
+            box-shadow:
+
+                0 0 0 2px
+                rgba(255,216,77,.25),
+
+                0 0 30px
+                rgba(255,216,77,.25),
+
+                0 10px 25px
+                rgba(0,0,0,.55);
+
+            transform:scale(1.04);
+
+        }
+
+
+        .real-okey-player-top{
+
+            top:72px;
+
+            left:50%;
+
+            transform:
+                translateX(-50%);
+
+        }
+
+
+        .real-okey-player-left{
+
+            left:18px;
+
+            top:50%;
+
+            transform:
+                translateY(-50%);
+
+        }
+
+
+        .real-okey-player-right{
+
+            right:18px;
+
+            top:50%;
+
+            transform:
+                translateY(-50%);
+
+        }
+
+
+        .real-okey-player-bottom{
+
+            bottom:175px;
+
+            left:50%;
+
+            transform:
+                translateX(-50%);
+
+        }
+
+
+        .real-okey-player.active.real-okey-player-top{
+
+            transform:
+                translateX(-50%)
+                scale(1.04);
+
+        }
+
+
+        .real-okey-player.active.real-okey-player-left{
+
+            transform:
+                translateY(-50%)
+                scale(1.04);
+
+        }
+
+
+        .real-okey-player.active.real-okey-player-right{
+
+            transform:
+                translateY(-50%)
+                scale(1.04);
+
+        }
+
+
+        .real-okey-player.active.real-okey-player-bottom{
+
+            transform:
+                translateX(-50%)
+                scale(1.04);
+
+        }
+
+
+        /* ====================================================
+           OYUNCU AVATAR
+           ==================================================== */
+
+        .real-okey-avatar{
+
+            width:44px;
+
+            height:44px;
+
+            margin:
+                0 auto 5px;
+
+            border-radius:50%;
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+
+            background:
+
+                radial-gradient(
+                    circle at 35% 30%,
+                    #777,
+                    #333 50%,
+                    #111
+                );
+
+            border:
+
+                2px solid
+                rgba(255,255,255,.7);
+
+            font-size:22px;
+
+            box-shadow:
+
+                0 5px 10px
+                rgba(0,0,0,.5);
+
+        }
+
+
+        .real-okey-name{
+
+            font-size:14px;
+
+            font-weight:900;
+
+        }
+
+
+        .real-okey-player-status{
+
+            margin-top:3px;
+
+            font-size:11px;
+
+            color:#c5d7cb;
+
+        }
+
+
+        /* ====================================================
+           ANA MASA
+           ==================================================== */
+
+        .real-okey-center{
+
+            position:absolute;
+
+            left:50%;
+
+            top:50%;
+
+            width:
+
+                calc(
+                    100% - 390px
+                );
+
+            height:455px;
+
+            max-width:800px;
+
+            transform:
+                translate(
+                    -50%,
+                    -50%
+                );
+
+            border-radius:35px;
+
+            border:
+
+                8px solid
+                #4a2710;
+
+            background:
+
+                radial-gradient(
+                    ellipse at center,
+                    #16804a 0%,
+                    #0c5b35 55%,
+                    #07351f 100%
+                );
+
+            box-shadow:
+
+                inset
+                0 0 55px
+                rgba(0,0,0,.8),
+
+                0 12px 30px
+                rgba(0,0,0,.5);
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+
+        }
+
+
+        /* ====================================================
+           MASA ORTA PANELİ
+           ==================================================== */
+
+        .real-okey-middle{
+
+            width:90%;
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+
+            gap:45px;
+
+        }
+
+
+        /* ====================================================
+           TAŞ HAVUZU
+           ==================================================== */
+
+        .real-okey-pile{
+
+            width:120px;
+
+            height:155px;
+
+            border-radius:14px;
+
+            border:
+
+                6px solid
+                #43220d;
+
+            background:
+
+                linear-gradient(
+                    145deg,
+                    #89501f,
+                    #4d240b
+                );
+
+            box-shadow:
+
+                inset
+                0 0 20px
+                rgba(0,0,0,.8),
+
+                0 12px 25px
+                rgba(0,0,0,.6);
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+
+            position:relative;
+
+        }
+
+
+        .real-okey-pile-label{
+
+            position:absolute;
+
+            bottom:7px;
+
+            left:0;
+
+            width:100%;
+
+            text-align:center;
+
+            font-size:10px;
+
+            font-weight:900;
+
+            color:#eee;
+
+        }
+
+
+        /* ====================================================
+           OKEY TAŞI
+           ==================================================== */
+
+        .real-okey-tile{
+
+            position:relative;
+
+            width:43px;
+
+            height:63px;
+
+            flex:
+
+                0 0 43px;
+
+            border-radius:7px;
+
+            border:
+
+                2px solid
+                #9b8753;
+
+            background:
+
+                linear-gradient(
+                    145deg,
+                    #fffff7 0%,
+                    #eee4c1 55%,
+                    #d0c295 100%
+                );
+
+            box-shadow:
+
+                inset
+                1px 1px 0
+                rgba(255,255,255,.9),
+
+                inset
+                -2px -2px 0
+                rgba(0,0,0,.12),
+
+                0 5px 9px
+                rgba(0,0,0,.65);
+
+            display:flex;
+
+            align-items:center;
+
+            justify-content:center;
+
+            font-size:22px;
+
+            font-weight:900;
+
+            user-select:none;
+
+            cursor:pointer;
+
+            transition:
+
+                transform .15s ease,
+
+                box-shadow .15s ease;
+
+        }
+
+
+        .real-okey-tile:hover{
+
+            transform:
+                translateY(-5px);
+
+        }
+
+
+        .real-okey-tile.selected{
+
+            transform:
+                translateY(-16px);
+
+            border-color:#ffd83d;
+
+            box-shadow:
+
+                0 0 0 3px
+                rgba(255,216,61,.45),
+
+                0 13px 18px
+                rgba(0,0,0,.7);
+
+        }
+
+
+        .real-okey-red{
+
+            color:#d51e24;
+
+        }
+
+
+        .real-okey-blue{
+
+            color:#075dcc;
+
+        }
+
+
+        .real-okey-black{
+
+            color:#171717;
+
+        }
+
+
+        .real-okey-yellow{
+
+            color:#bd8200;
+
+        }
+
+
+        .real-okey-joker{
+
+            color:#a51b20;
+
+            background:
+
+                linear-gradient(
+                    145deg,
+                    #fff4ad,
+                    #d5aa43
+                );
+
+        }
+
+
+        /* ====================================================
+           ISTAKA
+           ==================================================== */
+
+        .real-okey-rack-area{
+
+            position:absolute;
+
+            z-index:40;
+
+            left:50%;
+
+            bottom:28px;
+
+            width:
+
+                calc(
+                    100% - 100px
+                );
+
+            transform:
+                translateX(-50%);
+
+        }
+
+
+        .real-okey-rack{
+
+            min-height:112px;
+
+            width:100%;
+
+            padding:
+
+                14px
+                12px
+                11px;
+
+            border-radius:20px;
+
+            border:
+
+                9px solid
+                #351806;
+
+            background:
+
+                linear-gradient(
+                    180deg,
+                    #7a481f,
+                    #4b250d
+                );
+
+            box-shadow:
+
+                inset
+                0 0 25px
+                rgba(0,0,0,.85),
+
+                0 13px 28px
+                rgba(0,0,0,.6);
+
+            display:flex;
+
+            align-items:flex-end;
+
+            justify-content:center;
+
+            gap:3px;
+
+            overflow-x:auto;
+
+        }
+
+
+        /* ====================================================
+           KONTROLLER
+           ==================================================== */
+
+        .real-okey-controls{
+
+            display:flex;
+
+            justify-content:center;
+
+            align-items:center;
+
+            flex-wrap:wrap;
+
+            gap:9px;
+
+            margin-top:10px;
+
+        }
+
+
+        .real-okey-button{
+
+            border:0;
+
+            border-radius:11px;
+
+            padding:
+
+                10px
+                16px;
+
+            background:
+
+                linear-gradient(
+                    135deg,
+                    #6257ff,
+                    #087ea5
+                );
+
+            color:white;
+
+            font-weight:900;
+
+            cursor:pointer;
+
+            box-shadow:
+
+                0 5px 12px
+                rgba(0,0,0,.5);
+
+        }
+
+
+        .real-okey-button:hover{
+
+            filter:brightness(1.15);
+
+        }
+
+
+        .real-okey-button:disabled{
+
+            opacity:.4;
+
+            cursor:not-allowed;
+
+        }
+
+
+        /* ====================================================
+           OYUN MESAJI
+           ==================================================== */
+
+        .real-okey-message{
+
+            position:absolute;
+
+            top:18px;
+
+            left:50%;
+
+            transform:
+                translateX(-50%);
+
+            min-width:260px;
+
+            max-width:80%;
+
+            padding:
+
+                9px
+                16px;
+
+            border-radius:12px;
+
+            background:
+
+                rgba(0,0,0,.48);
+
+            border:
+
+                1px solid
+                rgba(255,255,255,.12);
+
+            text-align:center;
+
+            font-size:13px;
+
+            font-weight:800;
+
+            color:#e9f5ed;
+
+        }
+
+
+        /* ====================================================
+           SOHBET
+           ==================================================== */
+
+        .real-okey-chat{
+
+            position:absolute;
+
+            right:20px;
+
+            bottom:185px;
+
+            width:250px;
+
+            z-index:60;
+
+            border-radius:16px;
+
+            overflow:hidden;
+
+            background:
+
+                rgba(5,5,5,.78);
+
+            border:
+
+                2px solid
+                rgba(255,255,255,.12);
+
+            box-shadow:
+
+                0 12px 30px
+                rgba(0,0,0,.65);
+
+        }
+
+
+        .real-okey-chat-title{
+
+            padding:
+
+                9px
+                12px;
+
+            font-size:13px;
+
+            font-weight:900;
+
+            background:
+
+                rgba(255,255,255,.08);
+
+        }
+
+
+        .real-okey-chat-messages{
+
+            height:110px;
+
+            overflow-y:auto;
+
+            padding:8px;
+
+            font-size:12px;
+
+        }
+
+
+        .real-okey-chat-message{
+
+            padding:6px 8px;
+
+            margin-bottom:6px;
+
+            border-radius:8px;
+
+            background:
+
+                rgba(255,255,255,.07);
+
+        }
+
+
+        .real-okey-chat-message strong{
+
+            color:#ffd85b;
+
+        }
+
+
+        .real-okey-chat-input{
+
+            display:flex;
+
+            border-top:
+
+                1px solid
+                rgba(255,255,255,.1);
+
+        }
+
+
+        .real-okey-chat-input input{
+
+            width:100%;
+
+            min-width:0;
+
+            padding:9px;
+
+            border:0;
+
+            outline:0;
+
+            background:#111;
+
+            color:white;
+
+        }
+
+
+        .real-okey-chat-input button{
+
+            border:0;
+
+            padding:
+                8px
+                12px;
+
+            color:white;
+
+            background:#137a48;
+
+            font-weight:900;
+
+            cursor:pointer;
+
+        }
+
+
+        /* ====================================================
+           MOBİL
+           ==================================================== */
+
+        @media(max-width:850px){
+
+            .real-okey-wrapper{
+
+                min-height:780px;
+
+                padding:8px;
+
+                border-width:7px;
+
+            }
+
+
+            .real-okey-center{
+
+                width:96%;
+
+                height:390px;
+
+            }
+
+
+            .real-okey-player-left,
+            .real-okey-player-right{
+
+                display:none;
+
+            }
+
+
+            .real-okey-player-top{
+
+                top:62px;
+
+            }
+
+
+            .real-okey-middle{
+
+                gap:8px;
+
+            }
+
+
+            .real-okey-pile{
+
+                width:75px;
+
+                height:100px;
+
+            }
+
+
+            .real-okey-rack-area{
+
+                width:96%;
+
+                bottom:20px;
+
+            }
+
+
+            .real-okey-rack{
+
+                justify-content:flex-start;
+
+                overflow-x:auto;
+
+            }
+
+
+            .real-okey-tile{
+
+                width:31px;
+
+                height:47px;
+
+                flex-basis:31px;
+
+                font-size:16px;
+
+            }
+
+
+            .real-okey-chat{
+
+                position:static;
+
+                width:96%;
+
+                margin:
+
+                    0 auto
+                    10px;
+
+            }
+
+        }
+
+        `;
+
+        document.head.appendChild(style);
+
+    },
+
+
+    /* ========================================================
+       DESTE OLUŞTUR
+       ======================================================== */
+
+    createDeck: function(){
+
+        const deck = [];
+
+        for(
+            let colorIndex = 0;
+            colorIndex < this.colors.length;
+            colorIndex++
+        ){
+
+            const color =
+                this.colors[colorIndex];
+
+            for(
+                let copy = 0;
+                copy < 2;
+                copy++
+            ){
+
+                for(
+                    let number = 1;
+                    number <= 13;
+                    number++
+                ){
+
+                    deck.push({
+
+                        id:
+                            color.id +
+                            "-" +
+                            number +
+                            "-" +
+                            copy,
+
+                        color:
+                            color.id,
+
+                        value:
+                            number,
+
+                        joker:false
+
                     });
 
                 }
 
             }
-        });
 
-        result.push({
-            id:id++,
-            number:0,
+        }
+
+        deck.push({
+
+            id:"joker-1",
+
             color:"joker",
-            symbol:"⭐",
+
+            value:0,
+
             joker:true
+
         });
 
-        result.push({
-            id:id++,
-            number:0,
+        deck.push({
+
+            id:"joker-2",
+
             color:"joker",
-            symbol:"⭐",
+
+            value:0,
+
             joker:true
+
         });
 
-        return shuffle(result);
-    }
+        this.state.deck = deck;
 
-    function tileHTML(tile,index){
+    },
 
-        if(tile.joker){
 
-            return `
-                <button
-                    class="okey-tile joker ${
-                        selected.includes(index)
-                        ?"selected"
-                        :""
-                    }"
-                    data-tile="${index}"
-                >
-                    ${tile.symbol}
-                </button>
-            `;
+    /* ========================================================
+       KARIŞTIR
+       ======================================================== */
+
+    shuffleDeck: function(){
+
+        const deck =
+            this.state.deck;
+
+        for(
+            let i =
+                deck.length - 1;
+            i > 0;
+            i--
+        ){
+
+            const j =
+                Math.floor(
+                    Math.random() *
+                    (i + 1)
+                );
+
+            const temp =
+                deck[i];
+
+            deck[i] =
+                deck[j];
+
+            deck[j] =
+                temp;
+
+        }
+
+    },
+
+
+    /* ========================================================
+       TAŞLARI DAĞIT
+       ======================================================== */
+
+    dealCards: function(){
+
+        const players =
+            this.state.players;
+
+        for(
+            let round = 0;
+            round < 21;
+            round++
+        ){
+
+            for(
+                let p = 0;
+                p < players.length;
+                p++
+            ){
+
+                if(
+                    this.state.deck.length
+                ){
+
+                    players[p].hand.push(
+                        this.state.deck.pop()
+                    );
+
+                }
+
+            }
+
+        }
+
+        if(
+            this.state.deck.length
+        ){
+
+            players[0].hand.push(
+                this.state.deck.pop()
+            );
+
+        }
+
+        for(
+            let p = 0;
+            p < players.length;
+            p++
+        ){
+
+            players[p].hand.sort(
+                this.compareTiles.bind(this)
+            );
+
+        }
+
+    },
+
+
+    /* ========================================================
+       TAŞ SIRALAMA
+       ======================================================== */
+
+    compareTiles: function(a,b){
+
+        if(
+            a.color === b.color
+        ){
+
+            return a.value - b.value;
+
+        }
+
+        const order = [
+            "red",
+            "yellow",
+            "blue",
+            "black",
+            "joker"
+        ];
+
+        return (
+            order.indexOf(a.color) -
+            order.indexOf(b.color)
+        );
+
+    },
+
+
+    /* ========================================================
+       TAŞ HTML
+       ======================================================== */
+
+    tileHTML: function(
+        tile,
+        index,
+        selectable
+    ){
+
+        let colorClass =
+            "real-okey-" +
+            tile.color;
+
+        let text =
+            tile.joker
+            ? "★"
+            : tile.value;
+
+        return `
+
+            <div
+
+                class="
+                    real-okey-tile
+                    ${colorClass}
+                "
+
+                data-okey-index="
+                    ${index}
+                "
+
+                data-okey-selectable="
+                    ${selectable ? "1" : "0"}
+                "
+
+                title="
+                    ${
+                        tile.joker
+                        ? "Okey/Joker"
+                        : tile.value +
+                          " " +
+                          tile.color
+                    }
+                "
+
+            >
+
+                ${text}
+
+            </div>
+
+        `;
+
+    },
+
+
+    /* ========================================================
+       OYUNCU HTML
+       ======================================================== */
+
+    playerHTML: function(
+        player
+    ){
+
+        const active =
+            this.state.currentPlayer ===
+            player.id
+            ? "active"
+            : "";
+
+        let icon = "👨";
+
+        if(
+            player.id === 0
+        ){
+            icon = "👤";
+        }
+
+        if(
+            player.id === 2
+        ){
+            icon = "👩";
         }
 
         return `
-            <button
-                class="okey-tile ${tile.color} ${
-                    selected.includes(index)
-                    ?"selected"
-                    :""
-                }"
-                data-tile="${index}"
+
+            <div
+
+                class="
+                    real-okey-player
+                    real-okey-player-${player.position}
+                    ${active}
+                "
+
             >
-                ${tile.number}
-            </button>
+
+                <div
+                    class="real-okey-avatar"
+                >
+
+                    ${icon}
+
+                </div>
+
+                <div
+                    class="real-okey-name"
+                >
+
+                    ${player.name}
+
+                </div>
+
+                <div
+                    class="
+                        real-okey-player-status
+                    "
+                >
+
+                    ${
+                        player.id === 0
+                        ? "Sen"
+                        : player.hand.length +
+                          " taş"
+                    }
+
+                </div>
+
+            </div>
+
         `;
-    }
 
-    function start(){
+    },
 
-        deck=createDeck();
 
-        player=deck.splice(0,14);
+    /* ========================================================
+       RENDER BAŞLANGICI
+       ======================================================== */
 
-        bots.forEach(bot=>{
-            for(let i=0;i<14;i++){
-                bot.push(deck.shift());
-            }
-        });
+    render: function(){
 
-        discard.push(deck.shift());
+        const area =
+            this.findGameArea();
 
-        render();
-    }
+        if(!area){
 
-    function drawTile(){
-
-        if(finished||!turn)return;
-
-        if(!deck.length){
-
-            showMessage(
-                "🀄",
-                "Taş Bitti",
-                "Destede taş kalmadı."
+            console.warn(
+                "Okey oyun alanı bulunamadı."
             );
 
             return;
+
         }
 
-        player.push(deck.shift());
+        const players =
+            this.state.players;
 
-        selected=[];
+        area.innerHTML = `
 
-        render();
-    }
+            <div
+                class="real-okey-wrapper"
+            >
 
-    function discardTile(){
+                <div
+                    class="real-okey-title"
+                >
 
-        if(
-            finished||
-            !turn||
-            selected.length!==1
-        ){
+                    🀄 101 OKEY
 
-            showMessage(
-                "🀄",
-                "Taş Seç",
-                "Atmak için bir taş seçmelisin."
-            );
+                </div>
 
-            return;
-        }
+                <div
+                    class="real-okey-subtitle"
+                >
 
-        const index=selected[0];
+                    Gerçek masa düzeni •
+                    4 Oyuncu
 
-        const tile=player.splice(index,1)[0];
+                </div>
 
-        discard.push(tile);
+                ${this.playerHTML(
+                    players[1]
+                )}
 
-        selected=[];
+                ${this.playerHTML(
+                    players[2]
+                )}
 
-        if(player.length>=14){
+                ${this.playerHTML(
+                    players[3]
+                )}
 
-            const possible=
-                player.length>=14;
+                <div
+                    class="real-okey-center"
+                >
 
-            if(possible&&Math.random()<0.07){
+                    <div
+                        class="real-okey-message"
+                        id="real-okey-message"
+                    >
 
-                finished=true;
-
-                win("101 Okey");
-
-                return;
-            }
-        }
-
-        turn=false;
-
-        render();
-
-        setTimeout(botTurn,700);
-    }
-
-    function botTurn(){
-
-        if(finished)return;
-
-        bots.forEach(bot=>{
-
-            if(deck.length){
-
-                bot.push(deck.shift());
-            }
-
-            if(bot.length>14){
-
-                bot.splice(
-                    rand(0,bot.length-1),
-                    1
-                );
-            }
-
-        });
-
-        if(Math.random()<0.08){
-
-            finished=true;
-
-            lose("101 Okey");
-
-            return;
-        }
-
-        turn=true;
-
-        render();
-    }
-
-    function sortPlayer(){
-
-        player.sort((a,b)=>{
-
-            if(a.color===b.color){
-
-                return a.number-b.number;
-            }
-
-            return a.color.localeCompare(
-                b.color
-            );
-        });
-
-        selected=[];
-
-        render();
-    }
-
-    function render(){
-
-        if(finished)return;
-
-        gameArea.innerHTML=`
-
-            <div class="game-shell">
-
-                <div class="table-game okey-table">
-
-                    <div class="table-title">
-                        🀄 101 OKEY
-                    </div>
-
-                    <div class="game-info">
-                        ${turn
-                            ?"Senin sıran."
-                            :"Rakip oynuyor..."
+                        ${
+                            this.state.message
                         }
 
-                        &nbsp; | &nbsp;
-
-                        Destede:
-                        <strong>
-                            ${deck.length}
-                        </strong>
-                        taş
                     </div>
 
-                    <div class="okey-opponents">
+                    <div
+                        class="real-okey-middle"
+                    >
 
-                        ${bots.map(
-                            (bot,i)=>`
+                        <div
+                            class="real-okey-pile"
+                        >
 
-                                <div
-                                    class="okey-opponent"
-                                >
+                            <div
+                                class="
+                                    real-okey-tile
+                                    real-okey-black
+                                "
+                                style="
+                                    cursor:default;
+                                "
+                            >
 
-                                    <div class="okey-avatar">
-                                        🧑
-                                    </div>
+                                ▣
 
-                                    <strong>
-                                        ${botName()}
-                                    </strong>
-
-                                    <div class="okey-hidden">
-
-                                        ${bot
-                                            .map(
-                                                ()=>`
-                                                    <span
-                                                        class="okey-back">
-                                                    </span>
-                                                `
-                                            )
-                                            .join("")
-                                        }
-
-                                    </div>
-
-                                </div>
-
-                            `
-                        ).join("")}
-
-                    </div>
-
-                    <div class="okey-center">
-
-                        <div>
-
-                            <div class="game-info">
-                                Kalan Taş
                             </div>
 
-                            <div class="okey-pile">
-                                🀄
+                            <div
+                                class="
+                                    real-okey-pile-label
+                                "
+                            >
+
+                                TAŞ HAVUZU
+
                             </div>
 
                         </div>
 
-                        <div>
 
-                            <div class="game-info">
-                                Atılan
+                        <div
+                            style="
+                                text-align:center;
+                                font-weight:900;
+                                line-height:1.7;
+                            "
+                        >
+
+                            <div>
+                                101 OKEY
                             </div>
 
-                            <div class="okey-pile">
+                            <div
+                                style="
+                                    font-size:12px;
+                                    color:#c9e6d4;
+                                "
+                            >
 
+                                Kalan taş:
                                 ${
-                                    discard.length
-                                    ?(
-                                        discard[
-                                            discard.length-1
-                                        ].joker
-                                        ?"⭐"
-                                        :discard[
-                                            discard.length-1
-                                        ].number
-                                    )
-                                    :"—"
+                                    this.state.deck.length
                                 }
 
                             </div>
 
                         </div>
 
+
+                        <div
+                            class="
+                                real-okey-pile
+                            "
+                        >
+
+                            ${
+                                this.state.discard.length
+                                ? this.tileHTML(
+                                    this.state.discard[
+                                        this.state.discard.length - 1
+                                    ],
+                                    -1,
+                                    false
+                                )
+                                : `
+                                    <span
+                                        style="
+                                            font-size:30px;
+                                            color:white;
+                                        "
+                                    >
+                                        —
+                                    </span>
+                                `
+                            }
+
+                            <div
+                                class="
+                                    real-okey-pile-label
+                                "
+                            >
+
+                                ATILAN
+
+                            </div>
+
+                        </div>
+
                     </div>
 
-                    <div class="player-name">
+                </div>
+
+
+                <!-- KULLANICI ISTAKASI -->
+
+                <div
+                    class="
+                        real-okey-player
+                        real-okey-player-bottom
+                        ${
+                            this.state.currentPlayer === 0
+                            ? "active"
+                            : ""
+                        }
+                    "
+                >
+
+                    <div
+                        class="real-okey-avatar"
+                    >
+                        👤
+                    </div>
+
+                    <div
+                        class="real-okey-name"
+                    >
                         Sen
                     </div>
 
-                    <div class="okey-rack">
+                    <div
+                        class="
+                            real-okey-player-status
+                        "
+                    >
+                        ${
+                            players[0].hand.length
+                        } taş
+                    </div>
 
-                        ${player.map(
-                            (tile,index)=>
-                                tileHTML(tile,index)
-                        ).join("")}
+                </div>
+
+
+                <div
+                    class="real-okey-rack-area"
+                >
+
+                    <div
+                        class="real-okey-rack"
+                        id="real-okey-rack"
+                    >
+
+                        ${
+                            players[0].hand
+                            .map(
+                                (tile,index)=>
+                                    this.tileHTML(
+                                        tile,
+                                        index,
+                                        true
+                                    )
+                            )
+                            .join("")
+                        }
 
                     </div>
 
-                    <div class="game-toolbar">
+
+                    <div
+                        class="real-okey-controls"
+                    >
 
                         <button
-                            class="game-button"
-                            id="okey-draw"
-                            ${!turn?"disabled":""}
+                            class="
+                                real-okey-button
+                            "
+                            id="real-okey-draw"
                         >
                             🀄 Taş Çek
                         </button>
 
                         <button
-                            class="game-button"
-                            id="okey-discard"
-                            ${!turn?"disabled":""}
+                            class="
+                                real-okey-button
+                            "
+                            id="real-okey-discard"
+                            disabled
                         >
-                            🗑️ Taş At
+                            🗑 Taş At
                         </button>
 
                         <button
-                            class="game-button"
-                            id="okey-sort"
-                            ${!turn?"disabled":""}
+                            class="
+                                real-okey-button
+                            "
+                            id="real-okey-sort"
                         >
-                            🔢 Sırala
+                            ↕ Sırala
                         </button>
 
                     </div>
 
-                    <div class="game-info">
+                </div>
 
-                        Taşına tıklayarak seç.
-                        Bir taş seçip
-                        <strong>Taş At</strong>
-                        butonuna bas.
+
+                <!-- SOHBET -->
+
+                <div
+                    class="real-okey-chat"
+                >
+
+                    <div
+                        class="
+                            real-okey-chat-title
+                        "
+                    >
+
+                        💬 Oyun Sohbeti
+
+                    </div>
+
+                    <div
+                        id="
+                            real-okey-chat-messages
+                        "
+                        class="
+                            real-okey-chat-messages
+                        "
+                    >
+
+                        <div
+                            class="
+                                real-okey-chat-message
+                            "
+                        >
+
+                            <strong>
+                                Sistem:
+                            </strong>
+
+                            Oyuna hoş geldin.
+
+                        </div>
+
+                    </div>
+
+                    <div
+                        class="
+                            real-okey-chat-input
+                        "
+                    >
+
+                        <input
+                            id="
+                                real-okey-chat-input
+                            "
+                            type="text"
+                            maxlength="120"
+                            placeholder="
+                                Mesaj yaz...
+                            "
+                        >
+
+                        <button
+                            id="
+                                real-okey-chat-send
+                            "
+                        >
+                            Gönder
+                        </button>
 
                     </div>
 
                 </div>
 
             </div>
+
         `;
 
-        gameArea
-            .querySelectorAll("[data-tile]")
-            .forEach(button=>{
+        this.bindEvents();
 
-                button.addEventListener(
-                    "click",
-                    ()=>{
+    },
 
-                        const index=
-                            Number(
-                                button.dataset.tile
-                            );
 
-                        if(selected.includes(index)){
+    /* ========================================================
+       OYUN ALANI BUL
+       ======================================================== */
 
-                            selected=
-                                selected.filter(
-                                    x=>x!==index
+    findGameArea: function(){
+
+        let area =
+            document.querySelector(
+                "#gameArea"
+            );
+
+        if(area){
+            return area;
+        }
+
+        area =
+            document.querySelector(
+                ".game-area"
+            );
+
+        if(area){
+            return area;
+        }
+
+        area =
+            document.querySelector(
+                "[data-game-area]"
+            );
+
+        if(area){
+            return area;
+        }
+
+        area =
+            document.querySelector(
+                "#gameModal .modal-body"
+            );
+
+        if(area){
+            return area;
+        }
+
+        return null;
+
+    },
+
+
+    /* ========================================================
+       EVENT BAĞLA
+       ======================================================== */
+
+    bindEvents: function(){
+
+        const rack =
+            document.getElementById(
+                "real-okey-rack"
+            );
+
+        if(rack){
+
+            rack
+                .querySelectorAll(
+                    "[data-okey-selectable='1']"
+                )
+                .forEach(
+                    element => {
+
+                        element.addEventListener(
+                            "click",
+                            () => {
+
+                                this.selectTile(
+                                    Number(
+                                        element.dataset.okeyIndex
+                                    )
                                 );
 
-                        }else{
-
-                            selected.push(index);
-                        }
-
-                        render();
-                    }
-                );
-            });
-
-        document
-            .getElementById("okey-draw")
-            ?.addEventListener(
-                "click",
-                drawTile
-            );
-
-        document
-            .getElementById("okey-discard")
-            ?.addEventListener(
-                "click",
-                discardTile
-            );
-
-        document
-            .getElementById("okey-sort")
-            ?.addEventListener(
-                "click",
-                sortPlayer
-            );
-    }
-
-    start();
-}
-
-/* =========================================================
-   TAVLA
-========================================================= */
-
-function createTavla(){
-
-    let finished=false;
-    let turn=true;
-    let dice=[];
-    let selectedDie=null;
-
-    const points=Array(24).fill(0);
-
-    points[0]=2;
-    points[5]=-5;
-    points[7]=-3;
-    points[11]=5;
-
-    points[12]=-5;
-    points[16]=3;
-    points[18]=5;
-    points[23]=-2;
-
-    let playerOff=0;
-    let botOff=0;
-
-    function roll(){
-
-        if(finished||!turn)return;
-
-        dice=[
-            rand(1,6),
-            rand(1,6)
-        ];
-
-        selectedDie=null;
-
-        if(dice[0]===dice[1]){
-
-            dice=[
-                dice[0],
-                dice[0],
-                dice[0],
-                dice[0]
-            ];
-        }
-
-        render();
-    }
-
-    function move(to){
-
-        if(
-            finished||
-            !turn||
-            selectedDie===null
-        ){
-            return;
-        }
-
-        const die=selectedDie;
-
-        let from=-1;
-
-        for(
-            let i=23;
-            i>=0;
-            i--
-        ){
-
-            if(points[i]>0){
-
-                const distance=
-                    Math.abs(to-i);
-
-                if(distance===die){
-
-                    from=i;
-
-                    break;
-                }
-            }
-        }
-
-        if(from<0){
-
-            showMessage(
-                "🎲",
-                "Geçersiz Hamle",
-                "Bu zar ile uygun pul bulunamadı."
-            );
-
-            return;
-        }
-
-        points[from]--;
-
-        if(
-            to>=0&&
-            to<24
-        ){
-
-            if(points[to]<0){
-
-                points[to]=1;
-            }else{
-
-                points[to]++;
-            }
-
-        }else{
-
-            playerOff++;
-
-            if(playerOff>=15){
-
-                finished=true;
-
-                win("Klasik Tavla");
-
-                return;
-            }
-        }
-
-        const index=
-            dice.indexOf(die);
-
-        if(index>=0){
-
-            dice.splice(index,1);
-        }
-
-        selectedDie=null;
-
-        if(!dice.length){
-
-            turn=false;
-
-            render();
-
-            setTimeout(
-                botTurn,
-                700
-            );
-
-        }else{
-
-            render();
-        }
-    }
-
-    function botTurn(){
-
-        if(finished)return;
-
-        const movesCount=
-            rand(1,2);
-
-        for(
-            let m=0;
-            m<movesCount;
-            m++
-        ){
-
-            const candidates=[];
-
-            points.forEach(
-                (value,index)=>{
-
-                    if(value<0){
-
-                        candidates.push(index);
-                    }
-                }
-            );
-
-            if(candidates.length){
-
-                const index=
-                    candidates[
-                        rand(
-                            0,
-                            candidates.length-1
-                        )
-                    ];
-
-                points[index]++;
-
-                if(points[index]===0){
-
-                    points[index]=0;
-                }
-
-            }
-
-        }
-
-        botOff+=
-            rand(0,1);
-
-        if(botOff>=15){
-
-            finished=true;
-
-            lose("Klasik Tavla");
-
-            return;
-        }
-
-        turn=true;
-
-        dice=[];
-
-        selectedDie=null;
-
-        render();
-    }
-
-    function render(){
-
-        if(finished)return;
-
-        const order=[
-            ...Array.from(
-                {length:12},
-                (_,i)=>23-i
-            ),
-            ...Array.from(
-                {length:12},
-                (_,i)=>i
-            )
-        ];
-
-        gameArea.innerHTML=`
-
-            <div class="game-shell">
-
-                <div class="table-game">
-
-                    <div class="table-title">
-                        🎲 KLASİK TAVLA MASASI
-                    </div>
-
-                    <div class="game-info">
-
-                        Sen:
-                        <strong>
-                            ${15-playerOff}
-                        </strong>
-                        pul
-
-                        &nbsp; | &nbsp;
-
-                        Rakip:
-                        <strong>
-                            ${15-botOff}
-                        </strong>
-                        pul
-
-                    </div>
-
-                    <div class="dice-row">
-
-                        ${
-                            dice.map(d=>`
-
-                                <button
-                                    class="
-                                        die
-                                        ${
-                                            selectedDie===d
-                                            ?"selected"
-                                            :""
-                                        }
-                                    "
-                                    data-die="${d}">
-
-                                    ${d}
-
-                                </button>
-
-                            `).join("")
-                        }
-
-                    </div>
-
-                    <div class="tavla-board">
-
-                        ${order.map(index=>{
-
-                            const count=
-                                Math.abs(points[index]);
-
-                            const player=
-                                points[index]>0;
-
-                            return `
-
-                                <div
-                                    class="tavla-point"
-                                    data-point="${index}">
-
-                                    <span class="tavla-number">
-                                        ${index+1}
-                                    </span>
-
-                                    ${Array.from(
-                                        {
-                                            length:
-                                                Math.min(count,6)
-                                        },
-                                        ()=>`
-
-                                            <span
-                                                class="
-                                                    tavla-checker
-                                                    ${
-                                                        player
-                                                        ?"white"
-                                                        :"black"
-                                                    }
-                                                ">
-                                            </span>
-
-                                        `
-                                    ).join("")}
-
-                                </div>
-
-                            `;
-
-                        }).join("")}
-
-                    </div>
-
-                    <div class="game-toolbar">
-
-                        <button
-                            class="game-button"
-                            id="tavla-roll"
-                            ${
-                                !turn||dice.length
-                                ?"disabled"
-                                :""
-                            }>
-
-                            🎲 Zar At
-
-                        </button>
-
-                    </div>
-
-                    <div class="game-info">
-
-                        ${
-                            turn
-                            ?(
-                                dice.length
-                                ?"Zarı seç, sonra oynatacağın pula tıkla."
-                                :"Zar atarak oyuna başla."
-                            )
-                            :"Rakip oynuyor..."
-                        }
-
-                    </div>
-
-                </div>
-
-            </div>
-        `;
-
-        gameArea
-            .querySelectorAll(".die")
-            .forEach(el=>{
-
-                el.addEventListener(
-                    "click",
-                    ()=>{
-
-                        selectedDie=
-                            Number(
-                                el.dataset.die
-                            );
-
-                        render();
-                    }
-                );
-            });
-
-        gameArea
-            .querySelectorAll(".tavla-point")
-            .forEach(el=>{
-
-                el.addEventListener(
-                    "click",
-                    ()=>{
-
-                        if(selectedDie===null){
-
-                            showMessage(
-                                "🎲",
-                                "Zar Seç",
-                                "Önce bir zar seç."
-                            );
-
-                            return;
-                        }
-
-                        move(
-                            Number(
-                                el.dataset.point
-                            )
-                        );
-                    }
-                );
-            });
-
-        document
-            .getElementById("tavla-roll")
-            ?.addEventListener(
-                "click",
-                roll
-            );
-    }
-
-    render();
-}
-
-/* =========================================================
-   TÜRK DAMASI
-========================================================= */
-
-function createDama(){
-
-    let finished=false;
-    let turn=true;
-    let selected=null;
-
-    const board=Array(64).fill(null);
-
-    for(let r=0;r<2;r++){
-
-        for(let c=0;c<8;c++){
-
-            board[r*8+c]={
-                side:"bot",
-                king:false
-            };
-        }
-    }
-
-    for(let r=6;r<8;r++){
-
-        for(let c=0;c<8;c++){
-
-            board[r*8+c]={
-                side:"player",
-                king:false
-            };
-        }
-    }
-
-    function rc(i){
-
-        return [
-            Math.floor(i/8),
-            i%8
-        ];
-    }
-
-    function id(r,c){
-
-        return r*8+c;
-    }
-
-    function inside(r,c){
-
-        return (
-            r>=0&&
-            r<8&&
-            c>=0&&
-            c<8
-        );
-    }
-
-    const dirs=[
-        [-1,0],
-        [1,0],
-        [0,-1],
-        [0,1]
-    ];
-
-    function moves(i,captureOnly=false){
-
-        const piece=board[i];
-
-        if(!piece)return[];
-
-        const [r,c]=rc(i);
-
-        const result=[];
-
-        if(!captureOnly){
-
-            if(piece.king){
-
-                dirs.forEach(([dr,dc])=>{
-
-                    const nr=r+dr;
-                    const nc=c+dc;
-
-                    if(
-                        inside(nr,nc)&&
-                        !board[id(nr,nc)]
-                    ){
-
-                        result.push({
-                            to:id(nr,nc),
-                            capture:null
-                        });
-                    }
-                });
-
-            }else{
-
-                const forward=
-                    piece.side==="player"
-                    ?-1
-                    :1;
-
-                [
-                    [forward,0],
-                    [0,-1],
-                    [0,1]
-                ].forEach(([dr,dc])=>{
-
-                    const nr=r+dr;
-                    const nc=c+dc;
-
-                    if(
-                        inside(nr,nc)&&
-                        !board[id(nr,nc)]
-                    ){
-
-                        result.push({
-                            to:id(nr,nc),
-                            capture:null
-                        });
-                    }
-                });
-            }
-        }
-
-        dirs.forEach(([dr,dc])=>{
-
-            const mr=r+dr;
-            const mc=c+dc;
-
-            const lr=r+2*dr;
-            const lc=c+2*dc;
-
-            if(
-                !inside(mr,mc)||
-                !inside(lr,lc)
-            ){
-
-                return;
-            }
-
-            const middle=
-                board[id(mr,mc)];
-
-            if(
-                middle&&
-                middle.side!==piece.side&&
-                !board[id(lr,lc)]
-            ){
-
-                result.push({
-                    to:id(lr,lc),
-                    capture:id(mr,mc)
-                });
-            }
-        });
-
-        return result;
-    }
-
-    function hasCapture(side){
-
-        return board.some(
-            (p,i)=>
-                p&&
-                p.side===side&&
-                moves(i,true).length
-        );
-    }
-
-    function makeMove(from,m){
-
-        const piece=board[from];
-
-        board[m.to]=piece;
-        board[from]=null;
-
-        if(m.capture!==null){
-
-            board[m.capture]=null;
-        }
-
-        const [r]=rc(m.to);
-
-        if(
-            piece.side==="player"&&
-            r===0
-        ){
-
-            piece.king=true;
-        }
-
-        if(
-            piece.side==="bot"&&
-            r===7
-        ){
-
-            piece.king=true;
-        }
-    }
-
-    function clickCell(i){
-
-        if(
-            finished||
-            !turn
-        ){
-            return;
-        }
-
-        const piece=board[i];
-
-        if(selected===null){
-
-            if(piece?.side!=="player"){
-                return;
-            }
-
-            if(
-                hasCapture("player")&&
-                !moves(i,true).length
-            ){
-
-                showMessage(
-                    "⚫",
-                    "Zorunlu Alma",
-                    "Alabilen başka taşın var."
-                );
-
-                return;
-            }
-
-            selected=i;
-
-            render();
-
-            return;
-        }
-
-        const mustCapture=
-            hasCapture("player");
-
-        const legal=
-            moves(
-                selected,
-                mustCapture
-            );
-
-        const move=
-            legal.find(
-                x=>x.to===i
-            );
-
-        if(!move){
-
-            if(
-                piece?.side==="player"
-            ){
-
-                selected=i;
-
-                render();
-            }
-
-            return;
-        }
-
-        makeMove(
-            selected,
-            move
-        );
-
-        if(
-            move.capture!==null
-        ){
-
-            const more=
-                moves(
-                    i,
-                    true
-                );
-
-            if(more.length){
-
-                selected=i;
-
-                render();
-
-                return;
-            }
-        }
-
-        selected=null;
-
-        const playerCount=
-            board.filter(
-                p=>p?.side==="player"
-            ).length;
-
-        const botCount=
-            board.filter(
-                p=>p?.side==="bot"
-            ).length;
-
-        if(playerCount===0){
-
-            finished=true;
-
-            lose("Türk Daması");
-
-            return;
-        }
-
-        if(botCount===0){
-
-            finished=true;
-
-            win("Türk Daması");
-
-            return;
-        }
-
-        turn=false;
-
-        render();
-
-        setTimeout(
-            botMove,
-            700
-        );
-    }
-
-    function botMove(){
-
-        if(finished)return;
-
-        const captures=[];
-
-        board.forEach(
-            (piece,index)=>{
-
-                if(
-                    piece?.side==="bot"
-                ){
-
-                    moves(
-                        index,
-                        true
-                    ).forEach(
-                        move=>{
-                            captures.push({
-                                from:index,
-                                move
-                            });
-                        }
-                    );
-                }
-            }
-        );
-
-        let choice;
-
-        if(captures.length){
-
-            choice=
-                captures[
-                    rand(
-                        0,
-                        captures.length-1
-                    )
-                ];
-
-        }else{
-
-            const normal=[];
-
-            board.forEach(
-                (piece,index)=>{
-
-                    if(
-                        piece?.side==="bot"
-                    ){
-
-                        moves(
-                            index,
-                            false
-                        ).forEach(
-                            move=>{
-
-                                normal.push({
-                                    from:index,
-                                    move
-                                });
                             }
                         );
+
                     }
+                );
+
+        }
+
+
+        const draw =
+            document.getElementById(
+                "real-okey-draw"
+            );
+
+        if(draw){
+
+            draw.addEventListener(
+                "click",
+                () => {
+
+                    this.drawTile();
+
                 }
             );
 
-            if(!normal.length){
-
-                finished=true;
-
-                win("Türk Daması");
-
-                return;
-            }
-
-            choice=
-                normal[
-                    rand(
-                        0,
-                        normal.length-1
-                    )
-                ];
         }
 
-        makeMove(
-            choice.from,
-            choice.move
-        );
 
-        const playerCount=
-            board.filter(
-                p=>p?.side==="player"
-            ).length;
+        const discard =
+            document.getElementById(
+                "real-okey-discard"
+            );
 
-        const botCount=
-            board.filter(
-                p=>p?.side==="bot"
-            ).length;
+        if(discard){
 
-        if(playerCount===0){
+            discard.addEventListener(
+                "click",
+                () => {
 
-            finished=true;
+                    this.discardSelected();
 
-            lose("Türk Daması");
+                }
+            );
 
-            return;
         }
 
-        if(botCount===0){
 
-            finished=true;
+        const sort =
+            document.getElementById(
+                "real-okey-sort"
+            );
 
-            win("Türk Daması");
+        if(sort){
 
-            return;
+            sort.addEventListener(
+                "click",
+                () => {
+
+                    this.sortPlayerHand();
+
+                }
+            );
+
         }
 
-        turn=true;
 
-        render();
-    }
+        const send =
+            document.getElementById(
+                "real-okey-chat-send"
+            );
 
-    function render(){
+        const input =
+            document.getElementById(
+                "real-okey-chat-input"
+            );
 
-        if(finished)return;
+        if(send){
 
-        gameArea.innerHTML=`
+            send.addEventListener(
+                "click",
+                () => {
 
-            <div class="game-shell">
+                    this.sendChat();
 
-                <div class="table-game">
+                }
+            );
 
-                    <div class="table-title">
-                        ⚫ TÜRK DAMASI
-                    </div>
+        }
 
-                    <div class="game-info">
 
-                        ${
-                            turn
-                            ?"Senin sıran."
-                            :"Rakip oynuyor..."
-                        }
+        if(input){
 
-                    </div>
+            input.addEventListener(
+                "keydown",
+                event => {
 
-                    <div class="dama-board">
+                    if(
+                        event.key ===
+                        "Enter"
+                    ){
 
-                        ${board.map(
-                            (piece,index)=>`
-
-                                <div
-                                    class="
-                                        dama-cell
-                                        ${
-                                            selected===index
-                                            ?"selected"
-                                            :""
-                                        }
-                                    "
-                                    data-cell="${index}"
-                                >
-
-                                    ${
-                                        piece
-                                        ?`
-                                            <div
-                                                class="
-                                                    dama-piece
-                                                    ${
-                                                        piece.side==="player"
-                                                        ?"white"
-                                                        :"black"
-                                                    }
-                                                    ${
-                                                        piece.king
-                                                        ?"king"
-                                                        :""
-                                                    }
-                                                "
-                                            ></div>
-                                        `
-                                        :""
-                                    }
-
-                                </div>
-
-                            `
-                        ).join("")}
-
-                    </div>
-
-                    <div class="game-info">
-
-                        Taşını seç,
-                        ardından gitmek istediğin
-                        kareye tıkla.
-
-                    </div>
-
-                </div>
-
-            </div>
-        `;
-
-        gameArea
-            .querySelectorAll("[data-cell]")
-            .forEach(cell=>{
-
-                cell.addEventListener(
-                    "click",
-                    ()=>{
-
-                        clickCell(
-                            Number(
-                                cell.dataset.cell
-                            )
-                        );
+                        this.sendChat();
 
                     }
-                );
-            });
-    }
 
-    render();
-}
+                }
+            );
 
-/* =========================================================
-   BATAK
-========================================================= */
+        }
 
-function createBatak(){
+    },
 
-    let finished=false;
-    let turn=true;
 
-    const suits=[
-        "♠",
-        "♥",
-        "♦",
-        "♣"
-    ];
+    /* ========================================================
+       TAŞ SEÇ
+       ======================================================== */
 
-    const ranks=[
-        "2","3","4","5","6","7","8",
-        "9","10","J","Q","K","A"
-    ];
-
-    let deck=[];
-    let hand=[];
-    let trick=[];
-    let scorePlayer=0;
-    let scoreBot=0;
-    let trump=null;
-
-    function createDeck(){
-
-        const result=[];
-
-        suits.forEach(
-            suit=>{
-
-                ranks.forEach(
-                    rank=>{
-
-                        result.push({
-                            suit,
-                            rank,
-                            value:ranks.indexOf(rank)+2
-                        });
-
-                    }
-                );
-            }
-        );
-
-        return shuffle(result);
-    }
-
-    function cardHTML(card,index){
-
-        const red=
-            card.suit==="♥"||
-            card.suit==="♦";
-
-        return `
-            <button
-                class="
-                    playing-card
-                    ${red?"red":""}
-                "
-                data-card="${index}"
-            >
-
-                <span>
-                    ${card.rank}
-                </span>
-
-                <span>
-                    ${card.suit}
-                </span>
-
-            </button>
-        `;
-    }
-
-    function start(){
-
-        deck=createDeck();
-
-        hand=deck.splice(
-            0,
-            13
-        );
-
-        trump=
-            suits[
-                rand(
-                    0,
-                    suits.length-1
-                )
-            ];
-
-        render();
-    }
-
-    function play(index){
+    selectTile: function(index){
 
         if(
-            finished||
-            !turn
+            this.state.currentPlayer !== 0
         ){
+
             return;
+
         }
 
-        const card=
+        this.state.selectedTile =
+            this.state.selectedTile === index
+            ? null
+            : index;
+
+        this.updateSelectedVisual();
+
+    },
+
+
+    /* ========================================================
+       SEÇİLİ TAŞ GÖRSELİ
+       ======================================================== */
+
+    updateSelectedVisual: function(){
+
+        const tiles =
+            document.querySelectorAll(
+                "#real-okey-rack .real-okey-tile"
+            );
+
+        tiles.forEach(
+            (tile,index) => {
+
+                tile.classList.toggle(
+                    "selected",
+                    index ===
+                    this.state.selectedTile
+                );
+
+            }
+        );
+
+        const button =
+            document.getElementById(
+                "real-okey-discard"
+            );
+
+        if(button){
+
+            button.disabled =
+                this.state.selectedTile === null;
+
+        }
+
+    },
+
+
+    /* ========================================================
+       TAŞ ÇEK
+       ======================================================== */
+
+    drawTile: function(){
+
+        if(
+            this.state.currentPlayer !== 0
+        ){
+
+            return;
+
+        }
+
+        if(
+            !this.state.deck.length
+        ){
+
+            this.state.message =
+                "Taş havuzu boş.";
+
+            this.updateMessage();
+
+            return;
+
+        }
+
+        const tile =
+            this.state.deck.pop();
+
+        this.state.players[0]
+            .hand
+            .push(tile);
+
+        this.state.selectedTile =
+            null;
+
+        this.state.message =
+            "Taş çektin. Bir taş seç ve at.";
+
+        this.render();
+
+    },
+
+
+    /* ========================================================
+       TAŞ AT
+       ======================================================== */
+
+    discardSelected: function(){
+
+        if(
+            this.state.currentPlayer !== 0
+        ){
+
+            return;
+
+        }
+
+        const index =
+            this.state.selectedTile;
+
+        if(index === null){
+
+            return;
+
+        }
+
+        const hand =
+            this.state.players[0].hand;
+
+        if(
+            !hand[index]
+        ){
+
+            return;
+
+        }
+
+        const tile =
             hand.splice(
                 index,
                 1
             )[0];
 
-        trick.push({
-            player:"Sen",
-            card
-        });
+        this.state.discard.push(
+            tile
+        );
 
-        if(
-            trick.length===4
-        ){
+        this.state.selectedTile =
+            null;
 
-            resolveTrick();
+        this.state.message =
+            "Taşı attın. Rakipler oynuyor.";
 
-        }else{
-
-            turn=false;
-
-            render();
-
-            setTimeout(
-                botPlay,
-                500
-            );
-        }
-    }
-
-    function botPlay(){
-
-        if(finished)return;
-
-        const card=
-            deck.length
-            ?deck.pop()
-            :null;
-
-        if(card){
-
-            trick.push({
-                player:"Rakip",
-                card
-            });
-        }
-
-        if(
-            trick.length>=4
-        ){
-
-            resolveTrick();
-
-        }else{
-
-            turn=true;
-
-            render();
-        }
-    }
-
-    function resolveTrick(){
-
-        const trumpCards=
-            trick.filter(
-                item=>
-                    item.card.suit===trump
-            );
-
-        let winner;
-
-        if(trumpCards.length){
-
-            winner=
-                trumpCards.reduce(
-                    (best,item)=>
-                        item.card.value>
-                        best.card.value
-                        ?item
-                        :best
-                );
-
-        }else{
-
-            const lead=
-                trick[0].card.suit;
-
-            const leadCards=
-                trick.filter(
-                    item=>
-                        item.card.suit===lead
-                );
-
-            winner=
-                leadCards.reduce(
-                    (best,item)=>
-                        item.card.value>
-                        best.card.value
-                        ?item
-                        :best
-                );
-        }
-
-        if(winner.player==="Sen"){
-
-            scorePlayer++;
-
-        }else{
-
-            scoreBot++;
-        }
-
-        trick=[];
-
-        if(
-            !hand.length
-        ){
-
-            finished=true;
-
-            if(scorePlayer>=scoreBot){
-
-                win("Batak");
-
-            }else{
-
-                lose("Batak");
-            }
-
-            return;
-        }
-
-        turn=
-            winner.player==="Sen";
-
-        render();
-
-        if(!turn){
-
-            setTimeout(
-                botPlay,
-                500
-            );
-        }
-    }
-
-    function render(){
-
-        if(finished)return;
-
-        gameArea.innerHTML=`
-
-            <div class="game-shell">
-
-                <div class="batak-table">
-
-                    <div class="table-title">
-                        🃏 BATAK
-                    </div>
-
-                    <div class="game-info">
-
-                        Koz:
-                        <strong>
-                            ${trump}
-                        </strong>
-
-                        &nbsp; | &nbsp;
-
-                        Sen:
-                        <strong>
-                            ${scorePlayer}
-                        </strong>
-
-                        &nbsp; - &nbsp;
-
-                        Rakip:
-                        <strong>
-                            ${scoreBot}
-                        </strong>
-
-                    </div>
-
-                    <div class="batak-seats">
-
-                        <div class="batak-seat">
-                            🧑<br>
-                            Sen
-                        </div>
-
-                        <div class="batak-seat">
-                            🤖<br>
-                            ${botName()}
-                        </div>
-
-                        <div class="batak-seat">
-                            🤖<br>
-                            ${botName()}
-                        </div>
-
-                    </div>
-
-                    <div class="batak-center">
-
-                        ${
-                            trick.map(
-                                item=>`
-
-                                    <div>
-                                        <div
-                                            class="
-                                                playing-card
-                                                ${
-                                                    item.card.suit==="♥"||
-                                                    item.card.suit==="♦"
-                                                    ?"red"
-                                                    :""
-                                                }
-                                            "
-                                        >
-
-                                            ${item.card.rank}
-                                            ${item.card.suit}
-
-                                        </div>
-
-                                        <small>
-                                            ${item.player}
-                                        </small>
-
-                                    </div>
-
-                                `
-                            ).join("")
-                        }
-
-                    </div>
-
-                    <div class="player-name">
-                        Senin Kartların
-                    </div>
-
-                    <div class="card-hand">
-
-                        ${
-                            hand.map(
-                                (card,index)=>
-                                    cardHTML(
-                                        card,
-                                        index
-                                    )
-                            ).join("")
-                        }
-
-                    </div>
-
-                    <div class="game-info">
-
-                        ${
-                            turn
-                            ?"Bir kart seç."
-                            :"Rakip oynuyor..."
-                        }
-
-                    </div>
-
-                </div>
-
-            </div>
-        `;
-
-        gameArea
-            .querySelectorAll("[data-card]")
-            .forEach(button=>{
-
-                button.addEventListener(
-                    "click",
-                    ()=>{
-
-                        play(
-                            Number(
-                                button.dataset.card
-                            )
-                        );
-
-                    }
-                );
-            });
-    }
-
-    start();
-}
-
-/* =========================================================
-   BİLARDO
-========================================================= */
-
-function createBilardo(){
-
-    let finished=false;
-    let scorePool=0;
-
-    const balls=[
-        {
-            x:18,
-            y:50,
-            color:"#fff"
-        },
-        {
-            x:35,
-            y:42,
-            color:"#f44336"
-        },
-        {
-            x:39,
-            y:50,
-            color:"#2196f3"
-        },
-        {
-            x:43,
-            y:58,
-            color:"#ffeb3b"
-        },
-        {
-            x:47,
-            y:42,
-            color:"#9c27b0"
-        },
-        {
-            x:51,
-            y:50,
-            color:"#4caf50"
-        },
-        {
-            x:55,
-            y:58,
-            color:"#ff9800"
-        }
-    ];
-
-    function hitBall(index){
-
-        if(finished)return;
-
-        const ball=balls[index];
-
-        if(!ball)return;
-
-        scorePool++;
-
-        ball.hit=true;
-
-        render();
+        this.render();
 
         setTimeout(
-            ()=>{
+            () => {
 
-                balls.splice(
-                    index,
-                    1
-                );
-
-                if(
-                    balls.length<=1
-                ){
-
-                    finished=true;
-
-                    win(
-                        "Bilardo",
-                        WIN_REWARD
-                    );
-
-                    return;
-                }
-
-                render();
+                this.playBots();
 
             },
-            500
-        );
-    }
-
-    function render(){
-
-        if(finished)return;
-
-        gameArea.innerHTML=`
-
-            <div class="game-shell">
-
-                <div class="table-game">
-
-                    <div class="table-title">
-                        🎱 BİLARDO
-                    </div>
-
-                    <div class="game-info">
-
-                        Cebe sokulan:
-                        <strong>
-                            ${scorePool}
-                        </strong>
-
-                    </div>
-
-                    <div class="pool-table">
-
-                        <div
-                            class="pool-pocket"
-                            style="left:-20px;top:-20px"
-                        ></div>
-
-                        <div
-                            class="pool-pocket"
-                            style="right:-20px;top:-20px"
-                        ></div>
-
-                        <div
-                            class="pool-pocket"
-                            style="left:-20px;bottom:-20px"
-                        ></div>
-
-                        <div
-                            class="pool-pocket"
-                            style="right:-20px;bottom:-20px"
-                        ></div>
-
-                        <div
-                            class="pool-pocket"
-                            style="
-                                left:calc(50% - 26px);
-                                top:-20px
-                            "
-                        ></div>
-
-                        <div
-                            class="pool-pocket"
-                            style="
-                                left:calc(50% - 26px);
-                                bottom:-20px
-                            "
-                        ></div>
-
-                        ${
-                            balls.map(
-                                (ball,index)=>`
-
-                                    <button
-                                        class="
-                                            pool-ball
-                                            ${
-                                                ball.hit
-                                                ?"hit"
-                                                :""
-                                            }
-                                        "
-                                        data-ball="${index}"
-                                        style="
-                                            left:${ball.x}%;
-                                            top:${ball.y}%;
-                                            background:${ball.color};
-                                        "
-                                    ></button>
-
-                                `
-                            ).join("")
-                        }
-
-                    </div>
-
-                    <div class="game-info">
-
-                        Toplara tıklayarak
-                        vuruş yap.
-
-                    </div>
-
-                </div>
-
-            </div>
-        `;
-
-        gameArea
-            .querySelectorAll("[data-ball]")
-            .forEach(button=>{
-
-                button.addEventListener(
-                    "click",
-                    ()=>{
-
-                        hitBall(
-                            Number(
-                                button.dataset.ball
-                            )
-                        );
-
-                    }
-                );
-            });
-    }
-
-    render();
-}
-
-/* =========================================================
-   MAHJONG
-========================================================= */
-
-function createMahjong(){
-
-    let finished=false;
-
-    const symbols=[
-        "🀄","🀅","🀆","🀇",
-        "🀈","🀉","🀊","🀋",
-        "🀌","🀍","🀎","🀏"
-    ];
-
-    let cards=
-        shuffle(
-            [...symbols,...symbols]
+            800
         );
 
-    let open=[];
-    let matched=0;
+    },
 
-    function clickCard(index){
 
-        if(
-            finished||
-            open.includes(index)
-        ){
-            return;
-        }
+    /* ========================================================
+       TAŞLARI SIRALA
+       ======================================================== */
 
-        if(
-            open.length>=2
-        ){
-            return;
-        }
+    sortPlayerHand: function(){
 
-        open.push(index);
-
-        render();
-
-        if(
-            open.length===2
-        ){
-
-            const [a,b]=open;
-
-            if(
-                cards[a]===cards[b]
-            ){
-
-                matched+=2;
-
-                open=[];
-
-                if(
-                    matched===cards.length
-                ){
-
-                    finished=true;
-
-                    win("Mahjong");
-
-                    return;
-                }
-
-                render();
-
-            }else{
-
-                setTimeout(
-                    ()=>{
-                        open=[];
-                        render();
-                    },
-                    700
-                );
-            }
-        }
-    }
-
-    function render(){
-
-        if(finished)return;
-
-        gameArea.innerHTML=`
-
-            <div class="game-shell">
-
-                <div class="table-game">
-
-                    <div class="table-title">
-                        🀄 MAHJONG
-                    </div>
-
-                    <div class="game-info">
-                        Eşleşen:
-                        ${matched}/${cards.length}
-                    </div>
-
-                    <div class="memory-grid">
-
-                        ${cards.map(
-                            (card,index)=>`
-
-                                <button
-                                    class="
-                                        memory-card
-                                        ${
-                                            open.includes(index)||
-                                            matched>0&&
-                                            false
-                                            ?"open"
-                                            :""
-                                        }
-                                    "
-                                    data-mahjong="${index}"
-                                >
-
-                                    ${
-                                        open.includes(index)
-                                        ?card
-                                        :"?"
-                                    }
-
-                                </button>
-
-                            `
-                        ).join("")}
-
-                    </div>
-
-                </div>
-
-            </div>
-        `;
-
-        gameArea
-            .querySelectorAll("[data-mahjong]")
-            .forEach(button=>{
-
-                button.addEventListener(
-                    "click",
-                    ()=>{
-
-                        clickCard(
-                            Number(
-                                button.dataset.mahjong
-                            )
-                        );
-
-                    }
-                );
-            });
-    }
-
-    render();
-}
-
-/* =========================================================
-   SUDOKU
-========================================================= */
-
-function createSudoku(){
-
-    let finished=false;
-
-    const puzzle=[
-        5,3,0,0,7,0,0,0,0,
-        6,0,0,1,9,5,0,0,0,
-        0,9,8,0,0,0,0,6,0,
-        8,0,0,0,6,0,0,0,3,
-        4,0,0,8,0,3,0,0,1,
-        7,0,0,0,2,0,0,0,6,
-        0,6,0,0,0,0,2,8,0,
-        0,0,0,4,1,9,0,0,5,
-        0,0,0,0,8,0,0,7,9
-    ];
-
-    const board=[...puzzle];
-
-    function valid(){
-
-        for(let r=0;r<9;r++){
-
-            const row=
-                board.slice(
-                    r*9,
-                    r*9+9
-                );
-
-            const nums=
-                row.filter(Boolean);
-
-            if(
-                new Set(nums).size!==nums.length
-            ){
-                return false;
-            }
-        }
-
-        for(let c=0;c<9;c++){
-
-            const nums=[];
-
-            for(let r=0;r<9;r++){
-
-                const value=
-                    board[r*9+c];
-
-                if(value){
-                    nums.push(value);
-                }
-            }
-
-            if(
-                new Set(nums).size!==nums.length
-            ){
-                return false;
-            }
-        }
-
-        for(
-            let br=0;
-            br<9;
-            br+=3
-        ){
-
-            for(
-                let bc=0;
-                bc<9;
-                bc+=3
-            ){
-
-                const nums=[];
-
-                for(
-                    let r=0;
-                    r<3;
-                    r++
-                ){
-
-                    for(
-                        let c=0;
-                        c<3;
-                        c++
-                    ){
-
-                        const value=
-                            board[
-                                (br+r)*9+
-                                bc+c
-                            ];
-
-                        if(value){
-                            nums.push(value);
-                        }
-                    }
-                }
-
-                if(
-                    new Set(nums).size!==nums.length
-                ){
-                    return false;
-                }
-            }
-        }
-
-        return true;
-    }
-
-    function clickCell(index){
-
-        if(
-            finished||
-            puzzle[index]
-        ){
-            return;
-        }
-
-        let value=
-            board[index]+1;
-
-        if(value>9){
-            value=0;
-        }
-
-        board[index]=value;
-
-        if(
-            board.every(
-                value=>value>=1
-            )&&
-            valid()
-        ){
-
-            finished=true;
-
-            win("Sudoku");
-
-            return;
-        }
-
-        render();
-    }
-
-    function render(){
-
-        if(finished)return;
-
-        gameArea.innerHTML=`
-
-            <div class="game-shell">
-
-                <div class="table-game">
-
-                    <div class="table-title">
-                        🔢 SUDOKU
-                    </div>
-
-                    <div class="game-info">
-
-                        Boş hücreye tıklayarak
-                        sayıyı değiştir.
-
-                    </div>
-
-                    <div class="sudoku">
-
-                        ${board.map(
-                            (value,index)=>`
-
-                                <button
-                                    class="
-                                        sudoku-cell
-                                        ${
-                                            puzzle[index]
-                                            ?"fixed"
-                                            :""
-                                        }
-                                    "
-                                    data-sudoku="${index}"
-                                >
-
-                                    ${
-                                        value||""
-                                    }
-
-                                </button>
-
-                            `
-                        ).join("")}
-
-                    </div>
-
-                </div>
-
-            </div>
-        `;
-
-        gameArea
-            .querySelectorAll("[data-sudoku]")
-            .forEach(button=>{
-
-                button.addEventListener(
-                    "click",
-                    ()=>{
-
-                        clickCell(
-                            Number(
-                                button.dataset.sudoku
-                            )
-                        );
-
-                    }
-                );
-            });
-    }
-
-    render();
-}
-/* =========================================================
-   BUBBLE SHOOTER
-========================================================= */
-
-function createBubble(){
-
-    let score=0;
-
-    gameArea.innerHTML=`
-
-        <div class="game-shell">
-
-            <div class="game-info">
-                15 baloncuk patlat.
-                Skor:
-                <strong id="bubble-score">
-                    0
-                </strong>
-            </div>
-
-            <div
-                class="bubbles"
-                id="bubbles">
-            </div>
-
-        </div>
-    `;
-
-    const colors=[
-        "#e53935",
-        "#2196f3",
-        "#4caf50",
-        "#ffca28",
-        "#9c27b0"
-    ];
-
-    const grid=
-        document.getElementById("bubbles");
-
-    for(let i=0;i<40;i++){
-
-        const b=
-            document.createElement("button");
-
-        b.className="bubble";
-
-        b.style.background=
-            colors[
-                rand(0,colors.length-1)
-            ];
-
-        b.addEventListener(
-            "click",
-            ()=>{
-
-                if(b.disabled)return;
-
-                b.disabled=true;
-                b.style.visibility="hidden";
-
-                score++;
-
-                document.getElementById(
-                    "bubble-score"
-                ).textContent=score;
-
-                if(score>=15){
-                    win("Bubble Shooter");
-                }
-            }
-        );
-
-        grid.appendChild(b);
-    }
-}
-
-/* =========================================================
-   ARABA YARIŞI
-========================================================= */
-
-function createRace(){
-
-    let x=45;
-    let score=0;
-    let finished=false;
-
-    gameArea.innerHTML=`
-
-        <div class="game-shell">
-
-            <div class="game-info">
-                Rakiplerden kaç.
-                20 puana ulaş.
-            </div>
-
-            <div class="race">
-
-                <div
-                    id="race-player"
-                    class="race-car"
-                    style="left:45%">
-                </div>
-
-                <div
-                    id="race-enemy"
-                    class="race-enemy"
-                    style="left:30%;top:-80px">
-                </div>
-
-            </div>
-
-            <div class="game-toolbar">
-
-                <button
-                    class="game-button"
-                    id="race-left">
-
-                    ◀ Sol
-
-                </button>
-
-                <button
-                    class="game-button"
-                    id="race-right">
-
-                    Sağ ▶
-
-                </button>
-
-            </div>
-
-        </div>
-    `;
-
-    const player=
-        document.getElementById(
-            "race-player"
-        );
-
-    const enemy=
-        document.getElementById(
-            "race-enemy"
-        );
-
-    function move(n){
-
-        x=Math.max(
-            5,
-            Math.min(85,x+n)
-        );
-
-        player.style.left=x+"%";
-    }
-
-    document.getElementById(
-        "race-left"
-    ).addEventListener(
-        "click",
-        ()=>move(-6)
-    );
-
-    document.getElementById(
-        "race-right"
-    ).addEventListener(
-        "click",
-        ()=>move(6)
-    );
-
-    const timer=setInterval(()=>{
-
-        if(finished){
-
-            clearInterval(timer);
-            return;
-        }
-
-        let y=
-            parseFloat(
-                enemy.style.top
-            )||-80;
-
-        y+=5;
-
-        if(y>420){
-
-            y=-80;
-
-            enemy.style.left=
-                rand(8,80)+"%";
-
-            score++;
-
-            if(score>=20){
-
-                finished=true;
-                clearInterval(timer);
-                win("Araba Yarışı");
-                return;
-            }
-        }
-
-        enemy.style.top=y+"px";
-
-    },80);
-}
-
-/* =========================================================
-   BLOCK PUZZLE
-========================================================= */
-
-function createBlock(){
-
-    const cells=
-        Array(64).fill(false);
-
-    let score=0;
-
-    function render(){
-
-        gameArea.innerHTML=`
-
-            <div class="game-shell">
-
-                <div class="game-info">
-                    Temizlenen satır:
-                    <strong>${score}</strong>
-                </div>
-
-                <div class="block-grid">
-
-                    ${cells.map((v,i)=>`
-
-                        <div
-                            class="
-                                block-cell
-                                ${v?"filled":""}
-                            "
-                            data-i="${i}">
-                        </div>
-
-                    `).join("")}
-
-                </div>
-
-                <div class="game-toolbar">
-
-                    <button
-                        class="game-button"
-                        id="block-add">
-
-                        🧱 Blok Yerleştir
-
-                    </button>
-
-                </div>
-
-            </div>
-        `;
-
-        document.getElementById(
-            "block-add"
-        )?.addEventListener(
-            "click",
-            ()=>{
-
-                let free=
-                    cells
-                    .map((v,i)=>v?null:i)
-                    .filter(
-                        v=>v!==null
-                    );
-
-                for(
-                    let i=0;
-                    i<4&&free.length;
-                    i++
-                ){
-
-                    const p=
-                        free.splice(
-                            rand(
-                                0,
-                                free.length-1
-                            ),
-                            1
-                        )[0];
-
-                    cells[p]=true;
-                }
-
-                for(let r=0;r<8;r++){
-
-                    if(
-                        cells
-                        .slice(r*8,r*8+8)
-                        .every(Boolean)
-                    ){
-
-                        for(let c=0;c<8;c++){
-                            cells[r*8+c]=false;
-                        }
-
-                        score++;
-                    }
-                }
-
-                render();
-
-                if(score>=5){
-                    win("Block Puzzle");
-                }
-            }
-        );
-    }
-
-    render();
-}
-
-/* =========================================================
-   OKÇULUK
-========================================================= */
-
-function createArchery(){
-
-    let score=0;
-
-    gameArea.innerHTML=`
-
-        <div class="game-shell">
-
-            <div class="game-info">
-                Hedefe 5 kez isabet ettir.
-            </div>
-
-            <div
-                class="target-area"
-                id="target-area">
-
-                <button
-                    class="target"
-                    id="target">
-                </button>
-
-            </div>
-
-            <div class="game-info">
-
-                Puan:
-                <strong id="archery-score">
-                    0
-                </strong>
-
-            </div>
-
-        </div>
-    `;
-
-    const target=
-        document.getElementById("target");
-
-    function move(){
-
-        target.style.left=
-            rand(5,85)+"%";
-
-        target.style.top=
-            rand(5,75)+"%";
-    }
-
-    target.addEventListener(
-        "click",
-        ()=>{
-
-            score++;
-
-            document.getElementById(
-                "archery-score"
-            ).textContent=score;
-
-            move();
-
-            if(score>=5){
-                win("Okçuluk");
-            }
-        }
-    );
-
-    move();
-}
-
-/* =========================================================
-   HAFIZA
-========================================================= */
-
-function createMemory(title){
-
-    const values=[
-        "🍎","🍎",
-        "🍌","🍌",
-        "🍇","🍇",
-        "🍉","🍉",
-        "🍓","🍓",
-        "🥝","🥝",
-        "🍒","🍒",
-        "🥥","🥥"
-    ];
-
-    const cards=
-        shuffle([...values]);
-
-    let open=[];
-    let matched=[];
-    let locked=false;
-
-    function render(){
-
-        gameArea.innerHTML=`
-
-            <div class="game-shell">
-
-                <div class="game-info">
-                    🧠 ${title}
-                    - Tüm çiftleri bul.
-                </div>
-
-                <div class="memory-grid">
-
-                    ${cards.map((value,i)=>`
-
-                        <button
-                            class="
-                                memory-card
-                                ${
-                                    open.includes(i)||
-                                    matched.includes(i)
-                                    ?"open"
-                                    :""
-                                }
-                            "
-                            data-i="${i}">
-
-                            ${
-                                open.includes(i)||
-                                matched.includes(i)
-                                ?value
-                                :"?"
-                            }
-
-                        </button>
-
-                    `).join("")}
-
-                </div>
-
-            </div>
-        `;
-
-        gameArea
-            .querySelectorAll(".memory-card")
-            .forEach(btn=>{
-
-                btn.addEventListener(
-                    "click",
-                    ()=>{
-
-                        const i=
-                            Number(btn.dataset.i);
-
-                        if(
-                            locked||
-                            matched.includes(i)||
-                            open.includes(i)
-                        ){
-                            return;
-                        }
-
-                        open.push(i);
-
-                        render();
-
-                        if(open.length===2){
-
-                            locked=true;
-
-                            setTimeout(()=>{
-
-                                if(
-                                    cards[open[0]]===
-                                    cards[open[1]]
-                                ){
-
-                                    matched.push(
-                                        open[0],
-                                        open[1]
-                                    );
-                                }
-
-                                open=[];
-                                locked=false;
-
-                                render();
-
-                                if(
-                                    matched.length===
-                                    cards.length
-                                ){
-
-                                    win(title);
-                                }
-
-                            },500);
-                        }
-                    }
-                );
-            });
-    }
-
-    render();
-}
-
-/* =========================================================
-   YILAN
-========================================================= */
-
-function createSnake(){
-
-    const size=20;
-
-    let snake=[
-        210,
-        211,
-        212
-    ];
-
-    let dir=-1;
-    let food=100;
-    let score=0;
-    let running=true;
-
-    gameArea.innerHTML=`
-
-        <div class="game-shell">
-
-            <div class="game-info">
-
-                🐍 Ok tuşlarıyla yönet.
-                Skor:
-                <strong id="snake-score">
-                    0
-                </strong>
-
-            </div>
-
-            <div
-                class="snake-board"
-                id="snake-board">
-            </div>
-
-        </div>
-    `;
-
-    const board=
-        document.getElementById(
-            "snake-board"
-        );
-
-    function render(){
-
-        board.innerHTML="";
-
-        for(let i=0;i<400;i++){
-
-            const cell=
-                document.createElement("div");
-
-            cell.className=
-                "snake-cell";
-
-            if(snake.includes(i)){
-                cell.classList.add("snake");
-            }
-
-            if(i===food){
-                cell.classList.add("food");
-            }
-
-            board.appendChild(cell);
-        }
-
-        document.getElementById(
-            "snake-score"
-        ).textContent=score;
-    }
-
-    function newFood(){
-
-        do{
-            food=rand(0,399);
-        }while(snake.includes(food));
-    }
-
-    const key=e=>{
-
-        if(
-            e.key==="ArrowUp"&&
-            dir!==20
-        ){
-            dir=-20;
-        }
-
-        if(
-            e.key==="ArrowDown"&&
-            dir!==-20
-        ){
-            dir=20;
-        }
-
-        if(
-            e.key==="ArrowLeft"&&
-            dir!==1
-        ){
-            dir=-1;
-        }
-
-        if(
-            e.key==="ArrowRight"&&
-            dir!==-1
-        ){
-            dir=1;
-        }
-    };
-
-    document.addEventListener(
-        "keydown",
-        key
-    );
-
-    const timer=setInterval(()=>{
-
-        if(!running){
-
-            clearInterval(timer);
-
-            document.removeEventListener(
-                "keydown",
-                key
+        this.state.players[0]
+            .hand
+            .sort(
+                this.compareTiles.bind(this)
             );
 
-            return;
+        this.state.selectedTile =
+            null;
+
+        this.state.message =
+            "Taşların sıralandı.";
+
+        this.render();
+
+    },
+
+
+    /* ========================================================
+       MESAJ GÜNCELLE
+       ======================================================== */
+
+    updateMessage: function(){
+
+        const element =
+            document.getElementById(
+                "real-okey-message"
+            );
+
+        if(element){
+
+            element.textContent =
+                this.state.message;
+
         }
 
-        const head=
-            snake[snake.length-1];
+    },
 
-        const next=head+dir;
 
-        const row=
-            Math.floor(head/20);
+    /* ========================================================
+       SOHBET MESAJI
+       ======================================================== */
 
-        const nextRow=
-            Math.floor(next/20);
+    sendChat: function(){
+
+        const input =
+            document.getElementById(
+                "real-okey-chat-input"
+            );
+
+        const box =
+            document.getElementById(
+                "real-okey-chat-messages"
+            );
 
         if(
-            next<0||
-            next>=400||
-            (dir===1&&nextRow!==row)||
-            (dir===-1&&nextRow!==row)||
-            snake.includes(next)
+            !input ||
+            !box
         ){
 
-            running=false;
+            return;
 
-            lose("Yılan Oyunu");
+        }
+
+        const text =
+            input.value.trim();
+
+        if(!text){
 
             return;
+
         }
 
-        snake.push(next);
+        const message =
+            document.createElement(
+                "div"
+            );
 
-        if(next===food){
+        message.className =
+            "real-okey-chat-message";
 
-            score++;
+        message.innerHTML =
+            "<strong>Sen:</strong> " +
+            this.escapeHTML(text);
 
-            newFood();
-
-            if(score>=10){
-
-                running=false;
-                win("Yılan Oyunu");
-                return;
-            }
-
-        }else{
-
-            snake.shift();
-        }
-
-        render();
-
-    },130);
-
-    render();
-}
-
-/* =========================================================
-   BASKET
-========================================================= */
-
-function createBasket(){
-
-    let score=0;
-    let attempts=0;
-    let finished=false;
-
-    gameArea.innerHTML=`
-
-        <div class="game-shell">
-
-            <div class="game-info">
-                🏀 5 basket yap.
-            </div>
-
-            <div class="basket-area">
-
-                <div class="hoop"></div>
-
-                <button
-                    class="basket-ball"
-                    id="basket-ball">
-                </button>
-
-            </div>
-
-            <div class="game-info">
-
-                Basket:
-                <strong id="basket-score">
-                    0
-                </strong>
-
-                &nbsp; | &nbsp;
-
-                Atış:
-                <strong id="basket-attempts">
-                    0
-                </strong>
-
-            </div>
-
-        </div>
-    `;
-
-    const ball=
-        document.getElementById(
-            "basket-ball"
+        box.appendChild(
+            message
         );
 
-    ball.addEventListener(
-        "click",
-        ()=>{
+        box.scrollTop =
+            box.scrollHeight;
 
-            if(finished)return;
+        input.value = "";
 
-            attempts++;
+    },
 
-            const success=
-                Math.random()>.4;
 
-            if(success){
+    /* ========================================================
+       GÜVENLİ METİN
+       ======================================================== */
 
-                score++;
+    escapeHTML: function(text){
 
-                ball.style.transform=
-                    "translate(-50%,-230px)";
+        return String(text)
+            .replace(
+                /&/g,
+                "&amp;"
+            )
+            .replace(
+                /</g,
+                "&lt;"
+            )
+            .replace(
+                />/g,
+                "&gt;"
+            )
+            .replace(
+                /"/g,
+                "&quot;"
+            )
+            .replace(
+                /'/g,
+                "&#039;"
+            );
 
-                setTimeout(()=>{
+    },
 
-                    ball.style.transform=
-                        "translateX(-50%)";
 
-                },400);
+    /* ========================================================
+       BOTLAR
+       ======================================================== */
+
+    playBots: function(){
+
+        for(
+            let i = 1;
+            i < 4;
+            i++
+        ){
+
+            this.state.currentPlayer =
+                i;
+
+            const player =
+                this.state.players[i];
+
+            if(
+                this.state.deck.length
+            ){
+
+                player.hand.push(
+                    this.state.deck.pop()
+                );
+
             }
 
-            document.getElementById(
-                "basket-score"
-            ).textContent=score;
+            if(
+                player.hand.length
+            ){
 
-            document.getElementById(
-                "basket-attempts"
-            ).textContent=attempts;
+                const randomIndex =
+                    Math.floor(
+                        Math.random() *
+                        player.hand.length
+                    );
 
-            if(score>=5){
+                const tile =
+                    player.hand.splice(
+                        randomIndex,
+                        1
+                    )[0];
 
-                finished=true;
-                win("Basket Atışı");
-                return;
+                this.state.discard.push(
+                    tile
+                );
+
             }
 
-            if(attempts>=10){
+        }
 
-                finished=true;
-                lose("Basket Atışı");
-            }
+        this.state.currentPlayer =
+            0;
+
+        this.state.message =
+            "Rakipler oynadı. Sıra sende.";
+
+        this.state.selectedTile =
+            null;
+
+        this.render();
+
+    }
+
+};
+
+})();
+/* ============================================================
+   OKEY GERÇEK MASA - 2. PARÇA
+   OYUNU AÇMA / EKRANA BAĞLAMA / BUTONLAR
+   ============================================================ */
+
+(function(){
+
+"use strict";
+
+
+/* ============================================================
+   OKEY OYUNUNU AÇ
+   ============================================================ */
+
+function startRealOkey(){
+
+    try{
+
+        if(
+            window.OYNAKAZAN_REAL_OKEY &&
+            typeof window.OYNAKAZAN_REAL_OKEY.init ===
+            "function"
+        ){
+
+            window.OYNAKAZAN_REAL_OKEY.init();
+
+            return true;
+
+        }
+
+    }catch(error){
+
+        console.error(
+            "Gerçek Okey başlatılamadı:",
+            error
+        );
+
+    }
+
+    return false;
+
+}
+
+
+/* ============================================================
+   OKEY ALANINI BUL
+   ============================================================ */
+
+function findOkeyContainer(){
+
+    const selectors = [
+
+        "#gameArea",
+
+        ".game-area",
+
+        "[data-game-area]",
+
+        "#gameModal .modal-body",
+
+        "#gameModal .modal-content",
+
+        ".modal-body",
+
+        "#game-container",
+
+        "#games-container"
+
+    ];
+
+    for(
+        let i=0;
+        i<selectors.length;
+        i++
+    ){
+
+        const element =
+            document.querySelector(
+                selectors[i]
+            );
+
+        if(element){
+
+            return element;
+
+        }
+
+    }
+
+    return null;
+
+}
+
+
+/* ============================================================
+   ESKİ OKEY İZLERİNİ TEMİZLE
+   ============================================================ */
+
+function clearOldOkey(){
+
+    const selectors = [
+
+        ".okey-game",
+
+        ".okey-table",
+
+        ".okey-board",
+
+        ".game-okey",
+
+        ".okey-container",
+
+        ".okey-wrapper",
+
+        ".okey-area",
+
+        "#okey-game",
+
+        "#okey-board"
+
+    ];
+
+    selectors.forEach(
+        selector => {
+
+            document
+                .querySelectorAll(
+                    selector
+                )
+                .forEach(
+                    element => {
+
+                        if(
+                            element.classList.contains(
+                                "real-okey-wrapper"
+                            )
+                        ){
+
+                            return;
+
+                        }
+
+                    }
+                );
+
         }
     );
+
 }
 
-/* =========================================================
-   REKLAM BONUSU
-========================================================= */
 
-adButton?.addEventListener(
-    "click",
-    ()=>{
+/* ============================================================
+   OKEY BUTONU İÇİN YARDIMCI
+   ============================================================ */
 
-        changeScore(AD_REWARD);
+function isOkeyButton(element){
 
-        showMessage(
-            "📺",
-            "Bonus",
-            "Deneme reklam bonusu olarak +100 puan eklendi."
-        );
+    if(!element){
+
+        return false;
+
     }
-);
 
-/* =========================================================
-   ESC
-========================================================= */
+    const text =
+        (
+            element.textContent ||
+            ""
+        )
+        .trim()
+        .toLowerCase();
+
+    const id =
+        (
+            element.id ||
+            ""
+        )
+        .toLowerCase();
+
+    const cls =
+        (
+            element.className ||
+            ""
+        )
+        .toString()
+        .toLowerCase();
+
+    return (
+
+        text.includes("okey") ||
+
+        id.includes("okey") ||
+
+        cls.includes("okey")
+
+    );
+
+}
+
+
+/* ============================================================
+   ESKİ OKEY BUTONLARINI BUL
+   ============================================================ */
+
+function hookOkeyButtons(){
+
+    const elements =
+        document.querySelectorAll(
+            "button, .game-card, .game-item, [data-game]"
+        );
+
+    elements.forEach(
+        element => {
+
+            if(
+                !isOkeyButton(element)
+            ){
+
+                return;
+
+            }
+
+            if(
+                element.dataset.realOkeyHooked ===
+                "1"
+            ){
+
+                return;
+
+            }
+
+            element.dataset.realOkeyHooked =
+                "1";
+
+
+            element.addEventListener(
+                "click",
+                function(event){
+
+                    const started =
+                        startRealOkey();
+
+                    if(started){
+
+                        event.preventDefault();
+
+                        event.stopPropagation();
+
+                    }
+
+                },
+                true
+            );
+
+        }
+    );
+
+}
+
+
+/* ============================================================
+   GENEL TIKLAMA YAKALAYICI
+   ============================================================ */
 
 document.addEventListener(
-    "keydown",
-    e=>{
+    "click",
+    function(event){
 
-        if(e.key==="Escape"){
+        const target =
+            event.target.closest(
+                "button, a, div"
+            );
 
-            closeGame();
-            hideMessage();
+        if(!target){
+
+            return;
+
         }
-    }
+
+        const text =
+            (
+                target.textContent ||
+                ""
+            )
+            .trim()
+            .toLowerCase();
+
+        const dataGame =
+            (
+                target.dataset &&
+                target.dataset.game
+            )
+            ? String(
+                target.dataset.game
+            ).toLowerCase()
+            : "";
+
+
+        if(
+
+            text === "101 okey" ||
+
+            text === "okey" ||
+
+            text.includes("101 okey") ||
+
+            dataGame === "okey" ||
+
+            dataGame === "101okey" ||
+
+            dataGame === "101-okey"
+
+        ){
+
+            const started =
+                startRealOkey();
+
+            if(started){
+
+                event.preventDefault();
+
+                event.stopPropagation();
+
+            }
+
+        }
+
+    },
+    true
 );
 
-/* =========================================================
-   BAŞLAT
-========================================================= */
 
-updateScore();
+/* ============================================================
+   SAYFA YÜKLENDİĞİNDE BUTONLARI BAĞLA
+   ============================================================ */
+
+function prepareRealOkey(){
+
+    hookOkeyButtons();
+
+}
+
+
+/* ============================================================
+   DOM HAZIRSA
+   ============================================================ */
+
+if(
+    document.readyState ===
+    "loading"
+){
+
+    document.addEventListener(
+        "DOMContentLoaded",
+        prepareRealOkey
+    );
+
+}else{
+
+    prepareRealOkey();
+
+}
+
+
+/* ============================================================
+   DİNAMİK OLARAK OLUŞAN BUTONLAR
+   ============================================================ */
+
+const observer =
+    new MutationObserver(
+        function(){
+
+            hookOkeyButtons();
+
+        }
+    );
+
+
+if(document.body){
+
+    observer.observe(
+        document.body,
+        {
+            childList:true,
+            subtree:true
+        }
+    );
+
+}
+
+
+/* ============================================================
+   GLOBAL OKEY BAŞLATMA KOMUTU
+   ============================================================ */
+
+window.startRealOkey =
+    startRealOkey;
+
+
+/* ============================================================
+   OKEY TEST KOMUTU
+   ============================================================ */
+
+window.testRealOkey =
+    function(){
+
+        console.log(
+            "Gerçek Okey test ediliyor..."
+        );
+
+        return startRealOkey();
+
+    };
+
+
+/* ============================================================
+   OKEY HAZIR
+   ============================================================ */
 
 console.log(
-    "OynaKazan aktif:",
-    games.length,
-    "oyun"
+    "101 Okey yeni motoru hazır."
 );
 
-});   
+})();
+/* ============================================================
+   OKEY GERÇEK MASA - 3. PARÇA
+   MODAL + GAME-AREA BAĞLANTISI + ATILAN TAŞI AL
+   ============================================================ */
+
+(function () {
+  "use strict";
+
+  const okey = window.OYNAKAZAN_REAL_OKEY;
+
+  if (!okey) {
+    console.error("Gerçek Okey sistemi bulunamadı.");
+    return;
+  }
+
+  /* ------------------------------------------------------------
+     DOĞRU GAME AREA
+     Mevcut index.html içindeki #game-area'yı kullanır.
+     ------------------------------------------------------------ */
+
+  okey.findGameArea = function () {
+    return (
+      document.getElementById("game-area") ||
+      document.getElementById("gameArea") ||
+      document.querySelector(".game-area") ||
+      document.querySelector("[data-game-area]")
+    );
+  };
+
+  /* ------------------------------------------------------------
+     OKEY MODALINI AÇ
+     ------------------------------------------------------------ */
+
+  const eskiInit = okey.init.bind(okey);
+
+  okey.init = function () {
+    const modal = document.getElementById("game-modal");
+    const area = document.getElementById("game-area");
+    const title = document.getElementById("modal-game-title");
+    const category = document.getElementById("modal-category");
+
+    if (modal) {
+      modal.classList.remove("hidden");
+      modal.style.display = "";
+    }
+
+    if (title) {
+      title.textContent = "101 Okey";
+    }
+
+    if (category) {
+      category.textContent = "MASA OYUNU";
+    }
+
+    if (area) {
+      area.innerHTML = "";
+    }
+
+    eskiInit();
+  };
+
+  /* ------------------------------------------------------------
+     ATILAN TAŞI AL
+     ------------------------------------------------------------ */
+
+  okey.takeDiscard = function () {
+    const state = okey.state;
+
+    if (!state) return;
+
+    if (state.currentPlayer !== 0) {
+      state.message = "Şu anda senin sıran değil.";
+      okey.render();
+      return;
+    }
+
+    if (!state.discard || state.discard.length === 0) {
+      state.message = "Ortada alınacak taş yok.";
+      okey.render();
+      return;
+    }
+
+    if (!state.players[0] || !state.players[0].hand) {
+      return;
+    }
+
+    const tile = state.discard.pop();
+
+    if (tile) {
+      state.players[0].hand.push(tile);
+      state.selectedTile = null;
+      state.message =
+        "Ortadaki taşı aldın. Şimdi bir taş seçip AT.";
+    }
+
+    okey.render();
+  };
+
+  /* ------------------------------------------------------------
+     RENDER'I GELİŞTİR
+     ATILAN TAŞI AL BUTONU EKLE
+     ------------------------------------------------------------ */
+
+  const eskiRender = okey.render.bind(okey);
+
+  okey.render = function () {
+    eskiRender();
+
+    const controls = document.querySelector(".real-okey-controls");
+
+    if (!controls) return;
+
+    if (document.getElementById("real-okey-take-discard")) {
+      return;
+    }
+
+    const button = document.createElement("button");
+
+    button.id = "real-okey-take-discard";
+    button.className = "real-okey-control-btn";
+    button.type = "button";
+    button.innerHTML = "⬅️ Atılanı Al";
+
+    button.addEventListener("click", function () {
+      okey.takeDiscard();
+    });
+
+    const drawButton =
+      controls.querySelector("#real-okey-draw");
+
+    if (drawButton) {
+      controls.insertBefore(button, drawButton);
+    } else {
+      controls.appendChild(button);
+    }
+  };
+
+  /* ------------------------------------------------------------
+     EK GÖRSEL DÜZENLEMELER
+     ------------------------------------------------------------ */
+
+  const extraStyle = document.createElement("style");
+
+  extraStyle.textContent = `
+    .real-okey-control-btn {
+      min-height: 48px !important;
+      padding: 10px 16px !important;
+      border-radius: 12px !important;
+      border: 1px solid rgba(255,255,255,.18) !important;
+      background: linear-gradient(180deg,#243447,#162331) !important;
+      color: #fff !important;
+      font-size: 15px !important;
+      font-weight: 800 !important;
+      cursor: pointer !important;
+      box-shadow: 0 5px 14px rgba(0,0,0,.25) !important;
+      transition: .18s ease !important;
+    }
+
+    .real-okey-control-btn:hover {
+      transform: translateY(-2px) !important;
+      filter: brightness(1.12) !important;
+    }
+
+    .real-okey-control-btn:active {
+      transform: translateY(0) !important;
+    }
+
+    .real-okey-controls {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 10px !important;
+      justify-content: center !important;
+      align-items: center !important;
+    }
+
+    .real-okey-table {
+      min-height: 680px !important;
+    }
+
+    .real-okey-center {
+      z-index: 5 !important;
+    }
+
+    .real-okey-rack-area {
+      z-index: 20 !important;
+    }
+
+    .real-okey-player-bottom {
+      z-index: 10 !important;
+    }
+
+    @media (max-width: 800px) {
+      .real-okey-table {
+        min-height: 760px !important;
+      }
+
+      .real-okey-controls {
+        padding: 8px !important;
+      }
+
+      .real-okey-control-btn {
+        font-size: 13px !important;
+        min-height: 42px !important;
+        padding: 8px 11px !important;
+      }
+    }
+  `;
+
+  document.head.appendChild(extraStyle);
+
+  /* ------------------------------------------------------------
+     GLOBAL BAŞLATMA
+     ------------------------------------------------------------ */
+
+  window.startRealOkey = function () {
+    try {
+      okey.init();
+      return true;
+    } catch (error) {
+      console.error("101 Okey başlatılırken hata:", error);
+      return false;
+    }
+  };
+
+  /* ------------------------------------------------------------
+     HAZIR
+     ------------------------------------------------------------ */
+
+  console.log(
+    "✅ GERÇEK 101 OKEY MASASI HAZIR. 4 OYUNCU + TAŞLAR + ÇEK + AT + ATILANI AL + SOHBET."
+  );
+
+})();

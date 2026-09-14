@@ -1,272 +1,468 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<meta name="description" content="OynaKazan - Ücretsiz online oyunlar, masa oyunları, zeka oyunları ve eğlenceli oyunlar.">
-<meta name="robots" content="index, follow">
+  <title>Oyun Dünyası | 15 Ücretsiz Tarayıcı Oyunu</title>
 
-<title>🎮 OynaKazan - Ücretsiz Online Oyunlar</title>
+  <meta name="description"
+        content="Oyun Dünyası ile 101 Okey, Tavla, Dama, Batak, Bilardo ve daha birçok ücretsiz tarayıcı oyununu oynayın.">
+  <meta name="theme-color" content="#0b1220">
 
-<link rel="stylesheet" href="stil.css">
-
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="stil.css">
 </head>
 
 <body>
 
-<header class="main-header">
+  <!-- =========================================================
+       ÜST MENÜ
+       ========================================================= -->
 
-    <div class="logo">
-        <i class="fa-solid fa-gamepad"></i>
-        <span>OynaKazan</span>
+  <header class="site-header">
+    <div class="container header-inner">
+
+      <a href="#" class="logo" onclick="return false;">
+        <span class="logo-main">Oyun Dünyası</span>
+        <span class="logo-sub">15 Ücretsiz Oyun</span>
+      </a>
+
+      <nav class="main-nav">
+        <a href="#anasayfa">Ana Sayfa</a>
+        <a href="#oyunlar">Oyunlar</a>
+        <a href="#nasil-oynanir">Nasıl Oynanır?</a>
+        <a href="#hakkimizda">Hakkımızda</a>
+      </nav>
+
+      <div class="player-info">
+        <span>⭐</span>
+        <strong id="user-score">500</strong>
+      </div>
+
     </div>
-
-    <div class="header-stats">
-
-        <div class="coin-badge">
-            <i class="fa-solid fa-coins"></i>
-            <span>Puan:</span>
-            <strong id="user-score">500</strong>
-        </div>
-
-        <button id="watch-ad-btn" class="ad-btn">
-            <i class="fa-solid fa-video"></i>
-            Reklam İzle &amp; Puan Kazan
-        </button>
-
-    </div>
-
-</header>
+  </header>
 
 
-<main class="container">
+  <!-- =========================================================
+       ANA SAYFA / HERO
+       ========================================================= -->
 
-    <!-- HERO -->
+  <main>
 
-    <section class="hero-banner">
+    <section id="anasayfa" class="hero-section">
+      <div class="container hero-inner">
 
-        <div class="hero-icon">🎮</div>
+        <div class="hero-content">
 
-        <h1>Ücretsiz Online Oyunlar</h1>
+          <span class="hero-badge">🎮 15 OYUN HAZIR</span>
 
-        <p>
-            Okey, Tavla, Dama, Batak, Bilardo, yarış,
-            zeka oyunları ve daha fazlası seni bekliyor.
-        </p>
+          <h1>
+            Eğlenceye<br>
+            <span>hemen başla!</span>
+          </h1>
 
-        <a href="#oyunlar" class="hero-btn">
-            <i class="fa-solid fa-play"></i>
-            Oyunlara Başla
-        </a>
+          <p>
+            101 Okey, Tavla, Dama, Batak, Bilardo ve daha birçok
+            oyunu doğrudan tarayıcından ücretsiz oyna.
+          </p>
 
-    </section>
+          <div class="hero-buttons">
+            <a href="#oyunlar" class="btn btn-primary">
+              🎮 Oyunlara Başla
+            </a>
 
-
-    <!-- KATEGORİLER -->
-
-    <section class="categories-section">
-
-        <h2>
-            <i class="fa-solid fa-layer-group"></i>
-            Oyun Kategorileri
-        </h2>
-
-        <div class="categories">
-
-            <button class="cat-btn active" data-filter="all">
-                Tüm Oyunlar
-            </button>
-
-            <button class="cat-btn" data-filter="board">
-                Masa Oyunları
-            </button>
-
-            <button class="cat-btn" data-filter="cards">
-                Kart Oyunları
-            </button>
-
-            <button class="cat-btn" data-filter="puzzle">
-                Zeka Oyunları
-            </button>
-
-            <button class="cat-btn" data-filter="arcade">
-                Eğlence
-            </button>
+            <a href="#nasil-oynanir" class="btn btn-secondary">
+              ❓ Nasıl Oynanır?
+            </a>
+          </div>
 
         </div>
 
-    </section>
 
+        <div class="hero-card">
 
-    <!-- =====================================================
-         OYUNLAR
-    ====================================================== -->
+          <div class="hero-card-icon">🎲</div>
 
-    <section id="oyunlar" class="games-section">
+          <h2>Oyun Dünyası</h2>
 
-        <div class="section-title">
+          <p>
+            Klasik masa oyunlarından hızlı arcade oyunlarına
+            kadar eğlence burada.
+          </p>
+
+          <div class="hero-stats">
+            <div>
+              <strong>15</strong>
+              <span>Oyun</span>
+            </div>
 
             <div>
-
-                <span class="small-title">
-                    <i class="fa-solid fa-fire"></i>
-                    POPÜLER OYUNLAR
-                </span>
-
-                <h2>Oyunlar</h2>
-
+              <strong>100%</strong>
+              <span>Ücretsiz</span>
             </div>
 
-            <span class="game-count">
-                15 Oyun
-            </span>
+            <div>
+              <strong>24/7</strong>
+              <span>Açık</span>
+            </div>
+          </div>
 
         </div>
 
-
-        <!--
-            ÖNEMLİ:
-            script.js bu alanın içine 15 oyun kartını
-            otomatik olarak yerleştiriyor.
-        -->
-
-        <div class="games-grid" id="games-container">
-
-        </div>
-
+      </div>
     </section>
 
 
-    <!-- =====================================================
-         OYUN MODALI
-    ====================================================== -->
+    <!-- =========================================================
+         REKLAM ALANI
+         ========================================================= -->
 
-    <div id="game-modal" class="modal hidden">
+    <section class="ad-section">
+      <div class="container">
 
-        <div class="modal-content">
+        <div class="ad-placeholder">
+          <span>📢</span>
+          <p>Reklam Alanı</p>
+          <small>Reklamlar yakında aktif olacaktır.</small>
+        </div>
 
-            <div class="modal-header">
-
-                <div>
-
-                    <span id="modal-category" class="modal-category">
-                        OYUN
-                    </span>
-
-                    <h2 id="modal-game-title">
-                        Oyun
-                    </h2>
-
-                </div>
+      </div>
+    </section>
 
 
-                <button
-                    class="close-modal"
-                    id="close-modal-btn"
-                    aria-label="Kapat">
+    <!-- =========================================================
+         OYUNLAR
+         ========================================================= -->
 
-                    <i class="fa-solid fa-xmark"></i>
+    <section id="oyunlar" class="games-section">
+      <div class="container">
 
-                </button>
+        <div class="section-heading">
+          <span class="section-label">🎮 OYUNLAR</span>
 
-            </div>
+          <h2>Bir oyun seç ve eğlenceye başla</h2>
+
+          <p>
+            İstediğin oyunu seç. Oyun doğrudan bu sayfada açılır.
+          </p>
+        </div>
 
 
-            <div id="game-area" class="game-area">
+        <!-- OYUN FİLTRELERİ -->
 
-            </div>
+        <div class="game-filters">
+
+          <button class="game-filter active" data-filter="all">
+            Tümü
+          </button>
+
+          <button class="game-filter" data-filter="board">
+            🎲 Masa
+          </button>
+
+          <button class="game-filter" data-filter="cards">
+            🃏 Kart
+          </button>
+
+          <button class="game-filter" data-filter="sport">
+            ⚽ Spor
+          </button>
+
+          <button class="game-filter" data-filter="puzzle">
+            🧩 Zeka
+          </button>
+
+          <button class="game-filter" data-filter="arcade">
+            🕹️ Arcade
+          </button>
+
+          <button class="game-filter" data-filter="race">
+            🏎️ Yarış
+          </button>
 
         </div>
 
-    </div>
 
+        <!-- OYUN KARTLARI JAVASCRIPT TARAFINDAN GELECEK -->
 
-    <!-- =====================================================
-         BİLGİ / PUAN PENCERESİ
-    ====================================================== -->
+        <div id="games-container" class="games-grid"></div>
 
-    <div id="message-modal" class="message-modal hidden">
+      </div>
+    </section>
+       <!-- =========================================================
+         NASIL ÇALIŞIR?
+         ========================================================= -->
 
-        <div class="message-box">
+    <section id="nasil-oynanir" class="info-section">
+      <div class="container">
 
-            <div id="message-icon" class="message-icon">
-                🎮
-            </div>
+        <div class="section-heading">
+          <span class="section-label">✨ KOLAY VE HIZLI</span>
+          <h2>Nasıl Oynanır?</h2>
+          <p>Oyunu seç, başlat ve eğlenceye katıl.</p>
+        </div>
 
-            <h2 id="message-title">
-                Bilgi
-            </h2>
+        <div class="steps-grid">
 
-            <p id="message-text">
-                Bilgi
+          <div class="step-card">
+            <div class="step-number">1</div>
+            <div class="step-icon">🎮</div>
+            <h3>Oyunu Seç</h3>
+            <p>
+              Yukarıdaki oyunlardan istediğini seç ve
+              oyun kartına tıkla.
             </p>
+          </div>
 
-            <button id="message-close" class="message-close">
-                Tamam
-            </button>
+          <div class="step-card">
+            <div class="step-number">2</div>
+            <div class="step-icon">▶️</div>
+            <h3>Oyunu Başlat</h3>
+            <p>
+              Açılan oyun ekranından oyunu başlat ve
+              kontrolleri kullan.
+            </p>
+          </div>
+
+          <div class="step-card">
+            <div class="step-number">3</div>
+            <div class="step-icon">🏆</div>
+            <h3>Kazan ve İlerle</h3>
+            <p>
+              Oyun oynadıkça puan, XP ve sanal coin
+              kazanarak seviyeni yükselt.
+            </p>
+          </div>
 
         </div>
+
+      </div>
+    </section>
+
+
+    <!-- =========================================================
+         ÖDÜLLÜ REKLAM ALANI
+         ========================================================= -->
+
+    <section class="reward-section">
+      <div class="container">
+
+        <div class="reward-card">
+
+          <div class="reward-icon">🎁</div>
+
+          <div class="reward-content">
+            <span class="section-label">ÖDÜL</span>
+
+            <h2>Reklam İzleyerek Ödül Kazan</h2>
+
+            <p>
+              Ödüllü reklam sistemi hazır olduğunda,
+              reklam izleyerek oyun içi sanal ödül
+              kazanabileceksin.
+            </p>
+          </div>
+
+          <button
+            id="watch-ad-btn"
+            class="btn btn-primary"
+            type="button">
+            📺 Reklam İzle
+          </button>
+
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- =========================================================
+         HAKKIMIZDA
+         ========================================================= -->
+
+    <section id="hakkimizda" class="info-section about-section">
+      <div class="container">
+
+        <div class="section-heading">
+          <span class="section-label">ℹ️ HAKKIMIZDA</span>
+
+          <h2>Oyun Dünyası</h2>
+
+          <p>
+            Oyun Dünyası, farklı türlerde tarayıcı oyunlarını
+            tek bir yerde buluşturmayı amaçlayan ücretsiz bir
+            oyun platformudur.
+          </p>
+        </div>
+
+        <div class="about-grid">
+
+          <div class="about-card">
+            <div class="about-icon">📱</div>
+            <h3>Her Cihazda</h3>
+            <p>
+              Telefon, tablet ve bilgisayarda oynayabileceğin
+              şekilde tasarlanmıştır.
+            </p>
+          </div>
+
+          <div class="about-card">
+            <div class="about-icon">⚡</div>
+            <h3>Hızlı Başlangıç</h3>
+            <p>
+              Ek program yüklemeden doğrudan tarayıcı üzerinden
+              oyunlarını başlatabilirsin.
+            </p>
+          </div>
+
+          <div class="about-card">
+            <div class="about-icon">🎯</div>
+            <h3>Farklı Oyunlar</h3>
+            <p>
+              Masa oyunları, kart oyunları, spor, zeka ve
+              arcade oyunları tek platformda.
+            </p>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- =========================================================
+         ALT BİLGİ
+         ========================================================= -->
+
+    <section class="bottom-info">
+      <div class="container">
+
+        <div class="bottom-info-inner">
+
+          <div>
+            <h3>🎮 Oyun Dünyası</h3>
+            <p>
+              Eğlenceye her yerden devam et.
+            </p>
+          </div>
+
+          <div class="bottom-links">
+            <a href="gizlilik.html">Gizlilik Politikası</a>
+            <a href="kullanim-sartlari.html">Kullanım Şartları</a>
+            <a href="iletisim.html">İletişim</a>
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+    <!-- =========================================================
+       OYUN PENCERESİ
+       ========================================================= -->
+
+  <div id="game-modal" class="game-modal" aria-hidden="true">
+
+    <div class="game-modal-content">
+
+      <div class="game-modal-header">
+
+        <div>
+          <span id="modal-category" class="modal-category">
+            OYUN
+          </span>
+
+          <h2 id="modal-game-title">Oyun</h2>
+        </div>
+
+        <button
+          id="close-modal-btn"
+          class="close-modal-btn"
+          type="button"
+          aria-label="Oyunu kapat">
+          ✕
+        </button>
+
+      </div>
+
+
+      <!-- OYUNUN ÇALIŞACAĞI ALAN -->
+
+      <div id="game-area" class="game-area"></div>
 
     </div>
 
-</main>
+  </div>
 
 
-<!-- =====================================================
-     FOOTER
-====================================================== -->
+  <!-- =========================================================
+       BİLDİRİM PENCERESİ
+       ========================================================= -->
 
-<footer>
+  <div id="message-modal" class="message-modal" aria-hidden="true">
 
-    <div class="footer-content">
+    <div class="message-modal-content">
 
-        <div class="footer-logo">
-            🎮 OynaKazan
+      <div id="message-icon" class="message-icon">
+        🎉
+      </div>
+
+      <h2 id="message-title">Tebrikler!</h2>
+
+      <p id="message-text">
+        Oyun tamamlandı.
+      </p>
+
+      <button
+        id="message-close"
+        class="btn btn-primary"
+        type="button">
+        Tamam
+      </button>
+
+    </div>
+
+  </div>
+
+
+  <!-- =========================================================
+       FOOTER
+       ========================================================= -->
+
+  <footer class="site-footer">
+
+    <div class="container">
+
+      <div class="footer-inner">
+
+        <div class="footer-brand">
+          <strong>🎮 Oyun Dünyası</strong>
+          <span>15 ücretsiz tarayıcı oyunu</span>
         </div>
-
-        <p>
-            Ücretsiz online oyun platformu.
-        </p>
-
 
         <div class="footer-links">
-
-            <a href="hakkimizda.html">
-                Hakkımızda
-            </a>
-
-            <a href="iletisim.html">
-                İletişim
-            </a>
-
-            <a href="gizlilik.html">
-                Gizlilik
-            </a>
-
-            <a href="kullanim-sartlari.html">
-                Kullanım Şartları
-            </a>
-
+          <a href="gizlilik.html">Gizlilik</a>
+          <a href="kullanim-sartlari.html">Kullanım Şartları</a>
+          <a href="iletisim.html">İletişim</a>
         </div>
 
+      </div>
 
-        <p class="copyright">
-            © 2026 OynaKazan - Tüm Hakları Saklıdır.
-        </p>
+      <div class="footer-copy">
+        © 2026 Oyun Dünyası. Tüm hakları saklıdır.
+      </div>
 
     </div>
 
-</footer>
+  </footer>
 
 
-<!-- =====================================================
-     SCRIPT
-====================================================== -->
+  <!-- =========================================================
+       JAVASCRIPT
+       ========================================================= -->
 
-<script src="script.js"></script>
+  <script src="script.js"></script>
 
 </body>
 </html>

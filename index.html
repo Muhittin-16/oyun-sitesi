@@ -1,569 +1,1656 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>Oyun Dünyası | 15 Ücretsiz Tarayıcı Oyunu</title>
+<title>🎮 Oyun Dünyası | 15 Ücretsiz Oyun</title>
 
-  <meta name="description" content="Oyun Dünyası ile 101 Okey, Tavla, Dama, Batak, Bilardo ve daha birçok ücretsiz tarayıcı oyununu oynayın.">
-  <meta name="theme-color" content="#0b1220">
+<meta name="description" content="Oyun Dünyası - 15 ücretsiz tarayıcı oyunu. 101 Okey, Tavla, Dama, Batak, Bilardo ve daha fazlası.">
+<meta name="theme-color" content="#080b16">
 
-  <link rel="stylesheet" href="stil.css">
+<style>
+*{
+    box-sizing:border-box;
+}
+
+html{
+    scroll-behavior:smooth;
+}
+
+:root{
+    --bg:#070a13;
+    --bg2:#0c1020;
+    --panel:#11172a;
+    --panel2:#171e35;
+    --line:#293352;
+    --text:#f7f9ff;
+    --muted:#9da8c5;
+    --purple:#765cff;
+    --blue:#20c8ff;
+    --gold:#ffd166;
+    --green:#48e0a4;
+    --danger:#ff5f7a;
+}
+
+body{
+    margin:0;
+    min-height:100vh;
+    color:var(--text);
+    font-family:Inter,Segoe UI,Arial,sans-serif;
+    background:
+        radial-gradient(circle at 10% 0%,rgba(88,75,255,.20),transparent 32%),
+        radial-gradient(circle at 90% 10%,rgba(0,205,255,.14),transparent 30%),
+        linear-gradient(180deg,#070a13 0%,#090d19 55%,#060811 100%);
+}
+
+button,
+input{
+    font:inherit;
+}
+
+button{
+    touch-action:manipulation;
+}
+
+a{
+    color:inherit;
+}
+
+.hidden{
+    display:none!important;
+}
+
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.site-header{
+    position:sticky;
+    top:0;
+    z-index:100;
+    border-bottom:1px solid rgba(255,255,255,.07);
+    background:rgba(7,10,19,.82);
+    backdrop-filter:blur(18px);
+}
+
+.header-inner{
+    width:min(1220px,94%);
+    min-height:76px;
+    margin:auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:25px;
+}
+
+.logo{
+    text-decoration:none;
+    display:flex;
+    align-items:center;
+    gap:11px;
+    white-space:nowrap;
+}
+
+.logo-mark{
+    width:45px;
+    height:45px;
+    display:grid;
+    place-items:center;
+    border-radius:14px;
+    font-size:24px;
+    background:linear-gradient(135deg,var(--purple),var(--blue));
+    box-shadow:0 10px 30px rgba(80,80,255,.28);
+}
+
+.logo-text{
+    display:flex;
+    flex-direction:column;
+    line-height:1.05;
+}
+
+.logo-main{
+    font-size:20px;
+    font-weight:900;
+    letter-spacing:-.5px;
+}
+
+.logo-sub{
+    color:var(--muted);
+    font-size:11px;
+    margin-top:4px;
+    letter-spacing:1.5px;
+    text-transform:uppercase;
+}
+
+.main-nav{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.main-nav a{
+    text-decoration:none;
+    color:#b9c2db;
+    padding:10px 13px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:700;
+    transition:.2s;
+}
+
+.main-nav a:hover{
+    color:#fff;
+    background:#171e35;
+}
+
+.player-box{
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:9px 14px;
+    border:1px solid #303b5e;
+    border-radius:14px;
+    background:linear-gradient(135deg,#151c34,#0e1427);
+}
+
+.player-icon{
+    font-size:17px;
+}
+
+.player-score{
+    font-size:15px;
+    font-weight:900;
+}
+
+
+/* =========================================================
+   HERO
+   ========================================================= */
+
+.hero{
+    position:relative;
+    overflow:hidden;
+    min-height:510px;
+    display:flex;
+    align-items:center;
+    padding:80px 0 70px;
+    border-bottom:1px solid rgba(255,255,255,.05);
+}
+
+.hero-glow{
+    position:absolute;
+    width:520px;
+    height:520px;
+    border-radius:50%;
+    filter:blur(80px);
+    opacity:.18;
+    pointer-events:none;
+}
+
+.hero-glow.one{
+    background:#725cff;
+    left:-220px;
+    top:-180px;
+}
+
+.hero-glow.two{
+    background:#00cfff;
+    right:-220px;
+    bottom:-220px;
+}
+
+.hero-inner{
+    position:relative;
+    z-index:2;
+    width:min(1220px,94%);
+    margin:auto;
+    display:grid;
+    grid-template-columns:1.15fr .85fr;
+    gap:60px;
+    align-items:center;
+}
+
+.hero-content{
+    max-width:700px;
+}
+
+.hero-badge{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    padding:8px 14px;
+    border:1px solid #38446d;
+    border-radius:30px;
+    background:rgba(18,25,48,.8);
+    color:#cbd5ff;
+    font-size:12px;
+    font-weight:900;
+    letter-spacing:.7px;
+}
+
+.hero h1{
+    margin:22px 0 16px;
+    font-size:clamp(42px,6vw,76px);
+    line-height:.98;
+    letter-spacing:-3px;
+}
+
+.hero h1 span{
+    background:linear-gradient(90deg,#fff,#9eebff,#9a88ff);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+}
+
+.hero p{
+    max-width:650px;
+    color:var(--muted);
+    font-size:18px;
+    line-height:1.7;
+    margin:0;
+}
+
+.hero-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    margin-top:30px;
+}
+
+.hero-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    min-width:170px;
+    padding:14px 20px;
+    border-radius:13px;
+    text-decoration:none;
+    font-weight:900;
+    transition:.2s;
+}
+
+.hero-btn.primary{
+    color:#fff;
+    background:linear-gradient(135deg,var(--purple),#8b5cff);
+    box-shadow:0 15px 35px rgba(112,86,255,.24);
+}
+
+.hero-btn.secondary{
+    color:#dfe5ff;
+    border:1px solid #364263;
+    background:#12182b;
+}
+
+.hero-btn:hover{
+    transform:translateY(-2px);
+}
+
+.hero-panel{
+    position:relative;
+    padding:30px;
+    border:1px solid #303b5f;
+    border-radius:28px;
+    background:
+        linear-gradient(145deg,rgba(25,33,61,.94),rgba(10,15,29,.96));
+    box-shadow:0 30px 80px rgba(0,0,0,.38);
+}
+
+.hero-panel::before{
+    content:"";
+    position:absolute;
+    inset:1px;
+    border-radius:27px;
+    pointer-events:none;
+    background:linear-gradient(135deg,rgba(255,255,255,.06),transparent 40%);
+}
+
+.hero-panel-icon{
+    width:82px;
+    height:82px;
+    display:grid;
+    place-items:center;
+    border-radius:23px;
+    font-size:43px;
+    background:linear-gradient(135deg,#28225f,#132c48);
+    border:1px solid #3c4a73;
+    margin-bottom:22px;
+}
+
+.hero-panel h2{
+    margin:0 0 10px;
+    text-align:left;
+    font-size:28px;
+}
+
+.hero-panel p{
+    font-size:14px;
+    line-height:1.6;
+}
+
+.hero-mini-stats{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:9px;
+    margin-top:25px;
+}
+
+.hero-mini-stat{
+    padding:13px 8px;
+    text-align:center;
+    border:1px solid #293552;
+    border-radius:13px;
+    background:#0c1326;
+}
+
+.hero-mini-stat strong{
+    display:block;
+    font-size:20px;
+}
+
+.hero-mini-stat span{
+    display:block;
+    color:#7f8bab;
+    font-size:10px;
+    margin-top:4px;
+}
+
+
+/* =========================================================
+   ANA İÇERİK
+   ========================================================= */
+
+.container{
+    width:min(1220px,94%);
+    margin:auto;
+}
+
+.section{
+    padding:75px 0;
+}
+
+.section-heading{
+    text-align:center;
+    margin-bottom:32px;
+}
+
+.section-kicker{
+    display:inline-block;
+    color:#9daaff;
+    font-size:11px;
+    font-weight:900;
+    letter-spacing:2px;
+    margin-bottom:10px;
+}
+
+.section-heading h2{
+    margin:0;
+    font-size:34px;
+    letter-spacing:-1px;
+}
+
+.section-heading p{
+    color:var(--muted);
+    max-width:650px;
+    margin:10px auto 0;
+    line-height:1.6;
+}
+
+
+/* =========================================================
+   İSTATİSTİK
+   ========================================================= */
+
+.stats-grid{
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:14px;
+    margin-top:-30px;
+    position:relative;
+    z-index:5;
+}
+
+.stat-card{
+    padding:20px;
+    border:1px solid #293451;
+    border-radius:18px;
+    background:linear-gradient(145deg,#141c33,#0d1325);
+    box-shadow:0 16px 40px rgba(0,0,0,.2);
+}
+
+.stat-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.stat-icon{
+    font-size:22px;
+}
+
+.stat-label{
+    color:#7f8bab;
+    font-size:10px;
+    font-weight:900;
+    letter-spacing:1px;
+    margin-top:10px;
+}
+
+.stat-value{
+    font-size:25px;
+    font-weight:900;
+    margin-top:5px;
+}
+
+.xp-bar{
+    height:6px;
+    margin-top:10px;
+    border-radius:10px;
+    overflow:hidden;
+    background:#242e48;
+}
+
+.xp-bar div{
+    width:0;
+    height:100%;
+    background:linear-gradient(90deg,var(--purple),var(--blue));
+}
+
+
+/* =========================================================
+   BONUS + REKLAM
+   ========================================================= */
+
+.utility-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:12px;
+    flex-wrap:wrap;
+    margin:25px 0 12px;
+}
+
+.utility-btn{
+    border:0;
+    border-radius:12px;
+    padding:13px 20px;
+    color:#17120a;
+    background:linear-gradient(135deg,#ffd166,#ffe9a4);
+    font-weight:900;
+    cursor:pointer;
+}
+
+.ad-slot{
+    width:100%;
+    min-height:92px;
+    display:grid;
+    place-items:center;
+    margin:22px 0;
+    padding:20px;
+    border:1px dashed #33405f;
+    border-radius:17px;
+    color:#697592;
+    background:#0b1121;
+    text-align:center;
+}
+
+.ad-slot strong{
+    color:#7f8baa;
+    font-size:12px;
+    letter-spacing:1.5px;
+}
+
+.ad-slot small{
+    display:block;
+    margin-top:6px;
+    font-size:11px;
+}
+
+
+/* =========================================================
+   FİLTRELER
+   ========================================================= */
+
+.filters{
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:30px;
+}
+
+.game-filter{
+    border:1px solid #303c5d;
+    border-radius:25px;
+    padding:10px 17px;
+    color:#b9c4df;
+    background:#11182b;
+    cursor:pointer;
+    font-size:13px;
+    font-weight:800;
+    transition:.2s;
+}
+
+.game-filter:hover,
+.game-filter.active{
+    color:#fff;
+    border-color:transparent;
+    background:linear-gradient(135deg,var(--purple),#845cff);
+}
+
+
+/* =========================================================
+   OYUN KARTLARI
+   ========================================================= */
+
+.games-grid{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:18px;
+}
+
+.game-card{
+    position:relative;
+    overflow:hidden;
+    border:1px solid #293552;
+    border-radius:20px;
+    background:linear-gradient(145deg,#141c33,#0c1223);
+    transition:.25s;
+}
+
+.game-card:hover{
+    transform:translateY(-6px);
+    border-color:#5968a1;
+    box-shadow:0 22px 50px rgba(0,0,0,.35);
+}
+
+.game-image{
+    min-height:155px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:70px;
+    border-bottom:1px solid #252f4b;
+    background:
+        radial-gradient(circle at 50% 45%,rgba(105,90,255,.22),transparent 65%);
+}
+
+.game-card-content{
+    padding:20px;
+}
+
+.game-card-content h3{
+    margin:0 0 8px;
+    font-size:20px;
+}
+
+.game-card-content p{
+    min-height:42px;
+    margin:0 0 18px;
+    color:#8f9bb8;
+    line-height:1.5;
+    font-size:13px;
+}
+
+.play-game{
+    width:100%;
+    border:0;
+    border-radius:12px;
+    padding:13px;
+    color:#fff;
+    background:linear-gradient(135deg,var(--purple),#845cff);
+    font-weight:900;
+    cursor:pointer;
+    transition:.2s;
+}
+
+.play-game:hover{
+    filter:brightness(1.13);
+    transform:translateY(-1px);
+}
+
+
+/* =========================================================
+   NASIL OYNANIR
+   ========================================================= */
+
+.steps{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:18px;
+}
+
+.step{
+    position:relative;
+    padding:28px;
+    border:1px solid #293451;
+    border-radius:20px;
+    background:#0f1629;
+}
+
+.step-number{
+    width:38px;
+    height:38px;
+    display:grid;
+    place-items:center;
+    border-radius:12px;
+    color:#fff;
+    background:linear-gradient(135deg,var(--purple),var(--blue));
+    font-weight:900;
+    margin-bottom:20px;
+}
+
+.step-icon{
+    font-size:30px;
+    margin-bottom:12px;
+}
+
+.step h3{
+    margin:0 0 8px;
+}
+
+.step p{
+    color:var(--muted);
+    line-height:1.6;
+    font-size:14px;
+}
+
+
+/* =========================================================
+   ALT BİLGİ
+   ========================================================= */
+
+.info-panel{
+    padding:34px;
+    border:1px solid #293451;
+    border-radius:24px;
+    background:
+        radial-gradient(circle at 80% 20%,rgba(0,200,255,.08),transparent 30%),
+        linear-gradient(145deg,#11192e,#0b1120);
+    text-align:center;
+}
+
+.info-panel h2{
+    margin:0 0 10px;
+}
+
+.info-panel p{
+    max-width:760px;
+    margin:auto;
+    color:var(--muted);
+    line-height:1.7;
+}
+
+
+/* =========================================================
+   FOOTER
+   ========================================================= */
+
+footer{
+    margin-top:30px;
+    padding:40px 20px;
+    border-top:1px solid #1d2740;
+    background:#050810;
+    color:#7f8baa;
+    text-align:center;
+}
+
+.footer-title{
+    color:#fff;
+    font-weight:900;
+    font-size:18px;
+    margin-bottom:8px;
+}
+
+.footer-links{
+    margin-top:15px;
+}
+
+.footer-links a{
+    color:#a6b1ce;
+    text-decoration:none;
+    margin:0 9px;
+    font-size:13px;
+}
+
+.footer-links a:hover{
+    color:#fff;
+}
+
+.footer-copy{
+    margin-top:20px;
+    font-size:11px;
+}
+
+
+/* =========================================================
+   OYUN MODALI
+   ========================================================= */
+
+#game-modal{
+    position:fixed;
+    inset:0;
+    z-index:500;
+    overflow:auto;
+    padding:18px;
+    background:rgba(3,5,12,.94);
+    backdrop-filter:blur(14px);
+}
+
+.game-modal-content{
+    width:min(1100px,100%);
+    min-height:500px;
+    margin:15px auto;
+    border:1px solid #35436b;
+    border-radius:24px;
+    overflow:hidden;
+    background:linear-gradient(145deg,#111a31,#090f20);
+    box-shadow:0 30px 100px rgba(0,0,0,.65);
+}
+
+.game-modal-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:20px;
+    padding:18px 22px;
+    border-bottom:1px solid #27324e;
+    background:rgba(17,25,46,.85);
+}
+
+.modal-category{
+    color:#8f9cff;
+    font-size:10px;
+    font-weight:900;
+    letter-spacing:1.5px;
+}
+
+.game-modal-header h2{
+    margin:4px 0 0;
+    font-size:23px;
+}
+
+.close-modal-btn{
+    width:42px;
+    height:42px;
+    border:1px solid #354263;
+    border-radius:12px;
+    color:#fff;
+    background:#1a233c;
+    cursor:pointer;
+    font-size:18px;
+}
+
+.close-modal-btn:hover{
+    background:#283555;
+}
+
+.game-area{
+    padding:25px;
+}
+
+
+/* =========================================================
+   OYUN İÇİ ORTAK SINIFLAR
+   ========================================================= */
+
+.game-shell{
+    width:100%;
+    max-width:950px;
+    margin:auto;
+}
+
+.game-toolbar{
+    display:flex;
+    justify-content:center;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-bottom:14px;
+}
+
+.game-btn{
+    border:0;
+    border-radius:11px;
+    padding:11px 16px;
+    color:#fff;
+    background:#263351;
+    cursor:pointer;
+    font-weight:800;
+}
+
+.game-btn.primary{
+    background:linear-gradient(135deg,var(--purple),#805cff);
+}
+
+.game-btn.gold{
+    color:#1b1506;
+    background:linear-gradient(135deg,#ffd166,#ffe49a);
+}
+
+.game-status{
+    text-align:center;
+    color:#aeb9d4;
+    padding:10px;
+    margin-bottom:12px;
+}
+
+.game-shell canvas{
+    display:block;
+    max-width:100%;
+    height:auto;
+    margin:10px auto;
+    border:1px solid #344267;
+    border-radius:15px;
+    background:#050811;
+    touch-action:none;
+}
+
+.game-shell button{
+    touch-action:manipulation;
+}
+
+
+/* =========================================================
+   MESAJ PENCERESİ
+   ========================================================= */
+
+#message-modal{
+    position:fixed;
+    inset:0;
+    z-index:700;
+    display:grid;
+    place-items:center;
+    padding:20px;
+    background:rgba(3,5,12,.78);
+    backdrop-filter:blur(10px);
+}
+
+.message-modal-content{
+    width:min(430px,100%);
+    padding:35px;
+    border:1px solid #394871;
+    border-radius:24px;
+    background:linear-gradient(145deg,#151e38,#0c1325);
+    box-shadow:0 30px 90px rgba(0,0,0,.55);
+    text-align:center;
+}
+
+.message-icon{
+    font-size:55px;
+    margin-bottom:10px;
+}
+
+.message-modal-content h2{
+    margin:0 0 10px;
+}
+
+.message-modal-content p{
+    color:#aeb9d3;
+    line-height:1.6;
+}
+
+#message-close{
+    border:0;
+    border-radius:12px;
+    padding:12px 25px;
+    color:#fff;
+    background:linear-gradient(135deg,var(--purple),#825cff);
+    cursor:pointer;
+    font-weight:900;
+}
+
+
+/* =========================================================
+   MOBİL
+   ========================================================= */
+
+@media(max-width:950px){
+
+    .hero-inner{
+        grid-template-columns:1fr;
+        gap:35px;
+    }
+
+    .hero-content{
+        text-align:center;
+        margin:auto;
+    }
+
+    .hero p{
+        margin:auto;
+    }
+
+    .hero-actions{
+        justify-content:center;
+    }
+
+    .hero-panel{
+        max-width:650px;
+        width:100%;
+        margin:auto;
+    }
+
+    .games-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .stats-grid{
+        grid-template-columns:repeat(2,1fr);
+    }
+
+    .steps{
+        grid-template-columns:1fr;
+    }
+}
+
+@media(max-width:700px){
+
+    .header-inner{
+        min-height:auto;
+        padding:12px 0;
+        flex-wrap:wrap;
+        justify-content:center;
+    }
+
+    .main-nav{
+        order:3;
+        width:100%;
+        justify-content:center;
+        overflow:auto;
+    }
+
+    .main-nav a{
+        font-size:12px;
+        padding:8px;
+    }
+
+    .hero{
+        padding:55px 0;
+    }
+
+    .hero h1{
+        font-size:44px;
+        letter-spacing:-2px;
+    }
+
+    .games-grid{
+        grid-template-columns:1fr;
+    }
+
+    .section{
+        padding:55px 0;
+    }
+
+    .game-area{
+        padding:15px 8px;
+    }
+}
+
+@media(max-width:480px){
+
+    .stats-grid{
+        grid-template-columns:1fr 1fr;
+        gap:9px;
+    }
+
+    .stat-card{
+        padding:14px;
+    }
+
+    .stat-value{
+        font-size:20px;
+    }
+
+    .hero h1{
+        font-size:38px;
+    }
+
+    .hero-panel{
+        padding:22px;
+    }
+
+    .hero-mini-stats{
+        grid-template-columns:1fr 1fr 1fr;
+    }
+
+    .game-modal-content{
+        margin:0;
+        border-radius:18px;
+    }
+
+    #game-modal{
+        padding:7px;
+    }
+}
+</style>
 </head>
+
 
 <body>
 
-  <!-- =========================================================
-       ÜST MENÜ
-       ========================================================= -->
+<!-- =========================================================
+     HEADER
+     ========================================================= -->
 
-  <header class="site-header">
-    <div class="container header-inner">
+<header class="site-header">
 
-      <a href="#anasayfa" class="logo">
-        <span class="logo-main">Oyun Dünyası</span>
-        <span class="logo-sub">15 Ücretsiz Oyun</span>
-      </a>
+    <div class="header-inner">
 
-      <nav class="main-nav">
-        <a href="#anasayfa">Ana Sayfa</a>
-        <a href="#oyunlar">Oyunlar</a>
-        <a href="#nasil-oynanir">Nasıl Oynanır?</a>
-        <a href="#hakkimizda">Hakkımızda</a>
-      </nav>
+        <a href="#anasayfa" class="logo">
 
-      <div class="player-info">
-        <span>⭐</span>
-        <strong id="user-score">500</strong>
-      </div>
+            <div class="logo-mark">🎮</div>
+
+            <div class="logo-text">
+                <span class="logo-main">Oyun Dünyası</span>
+                <span class="logo-sub">15 Ücretsiz Oyun</span>
+            </div>
+
+        </a>
+
+
+        <nav class="main-nav">
+
+            <a href="#anasayfa">Ana Sayfa</a>
+
+            <a href="#oyunlar">Oyunlar</a>
+
+            <a href="#kategoriler">Kategoriler</a>
+
+            <a href="#nasil-oynanir">Nasıl Oynanır?</a>
+
+        </nav>
+
+
+        <div class="player-box">
+
+            <span class="player-icon">⭐</span>
+
+            <span id="user-score" class="player-score">500</span>
+
+        </div>
 
     </div>
-  </header>
+
+</header>
 
 
-  <!-- =========================================================
-       ANA SAYFA
-       ========================================================= -->
 
-  <main>
+<!-- =========================================================
+     HERO
+     ========================================================= -->
 
-    <section id="anasayfa" class="hero-section">
-      <div class="container hero-inner">
+<section id="anasayfa" class="hero">
+
+    <div class="hero-glow one"></div>
+    <div class="hero-glow two"></div>
+
+
+    <div class="hero-inner">
+
 
         <div class="hero-content">
 
-          <span class="hero-badge">🎮 15 OYUN HAZIR</span>
+            <span class="hero-badge">
+                ✦ 15 OYUN • MOBİL • TABLET • PC
+            </span>
 
-          <h1>
-            Eğlenceye<br>
-            <span>hemen başla!</span>
-          </h1>
 
-          <p>
-            101 Okey, Tavla, Dama, Batak, Bilardo ve daha birçok
-            oyunu doğrudan tarayıcından ücretsiz oyna.
-          </p>
+            <h1>
+                Oyunun yeni<br>
+                <span>dünyasına hoş geldin.</span>
+            </h1>
 
-          <div class="hero-buttons">
-            <a href="#oyunlar" class="btn btn-primary">
-              🎮 Oyunlara Başla
-            </a>
 
-            <a href="#nasil-oynanir" class="btn btn-secondary">
-              ❓ Nasıl Oynanır?
-            </a>
-          </div>
+            <p>
+                101 Okey'den Tavla'ya, Bilardo'dan Yılan'a kadar
+                birbirinden farklı oyunları tek platformda oyna.
+                Puan kazan, seviyeni yükselt ve eğlenceye devam et.
+            </p>
+
+
+            <div class="hero-actions">
+
+                <a href="#oyunlar" class="hero-btn primary">
+                    🎮 Oyunlara Başla
+                </a>
+
+                <a href="#nasil-oynanir" class="hero-btn secondary">
+                    ✦ Nasıl Oynanır?
+                </a>
+
+            </div>
 
         </div>
 
-        <div class="hero-card">
 
-          <div class="hero-card-icon">🎲</div>
 
-          <h2>Oyun Dünyası</h2>
+        <div class="hero-panel">
 
-          <p>
-            Klasik masa oyunlarından hızlı arcade oyunlarına
-            kadar eğlence burada.
-          </p>
-
-          <div class="hero-stats">
-
-            <div>
-              <strong>15</strong>
-              <span>Oyun</span>
+            <div class="hero-panel-icon">
+                🏆
             </div>
 
-            <div>
-              <strong>100%</strong>
-              <span>Ücretsiz</span>
-            </div>
+            <h2>
+                Oyna. Kazan. İlerle.
+            </h2>
 
-            <div>
-              <strong>24/7</strong>
-              <span>Açık</span>
-            </div>
+            <p>
+                Her oyun yeni bir mücadele. Başarılı oldukça
+                puan, XP ve sanal coin kazanarak oyun profilini
+                geliştirebilirsin.
+            </p>
 
-          </div>
+
+            <div class="hero-mini-stats">
+
+                <div class="hero-mini-stat">
+                    <strong>15</strong>
+                    <span>OYUN</span>
+                </div>
+
+                <div class="hero-mini-stat">
+                    <strong>∞</strong>
+                    <span>EĞLENCE</span>
+                </div>
+
+                <div class="hero-mini-stat">
+                    <strong>24/7</strong>
+                    <span>AÇIK</span>
+                </div>
+
+            </div>
 
         </div>
 
-      </div>
-    </section>
+    </div>
+
+</section>
 
 
-    <!-- =========================================================
-         REKLAM ALANI
-         ========================================================= -->
 
-    <section class="ad-section">
-      <div class="container">
+<!-- =========================================================
+     İSTATİSTİKLER
+     ========================================================= -->
 
-        <div class="ad-placeholder">
-          <span>📢</span>
-          <p>Reklam Alanı</p>
-          <small>Reklamlar yakında aktif olacaktır.</small>
+<div class="container">
+
+    <div class="stats-grid">
+
+        <div class="stat-card">
+
+            <div class="stat-top">
+                <span class="stat-icon">🏆</span>
+            </div>
+
+            <div class="stat-label">
+                PUAN
+            </div>
+
+            <div class="stat-value" id="score">
+                500
+            </div>
+
         </div>
 
-      </div>
-    </section>
+
+        <div class="stat-card">
+
+            <div class="stat-top">
+                <span class="stat-icon">🎮</span>
+            </div>
+
+            <div class="stat-label">
+                OYNANAN
+            </div>
+
+            <div class="stat-value" id="played">
+                0
+            </div>
+
+        </div>
 
 
-    <!-- =========================================================
-         OYUNLAR
-         ========================================================= -->
+        <div class="stat-card">
 
-    <section id="oyunlar" class="games-section">
+            <div class="stat-top">
+                <span class="stat-icon">🪙</span>
+            </div>
 
-      <div class="container">
+            <div class="stat-label">
+                COIN
+            </div>
+
+            <div class="stat-value" id="coins">
+                0
+            </div>
+
+        </div>
+
+
+        <div class="stat-card">
+
+            <div class="stat-top">
+                <span class="stat-icon">⭐</span>
+            </div>
+
+            <div class="stat-label">
+                SEVİYE
+            </div>
+
+            <div class="stat-value">
+                <span id="level">1</span>
+            </div>
+
+            <div class="xp-bar">
+                <div id="xp-bar"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- =========================================================
+     OYUNLAR
+     ========================================================= -->
+
+<section id="oyunlar" class="section">
+
+    <div class="container">
+
+
+        <div class="utility-row">
+
+            <button
+                id="watch-ad-btn"
+                class="utility-btn"
+                type="button">
+                🎁 Ödüllü Reklam
+            </button>
+
+        </div>
+
+
+        <div class="ad-slot">
+
+            <div>
+
+                <strong>REKLAM ALANI</strong>
+
+                <small>
+                    Reklam sistemi hazır olduğunda bu alan kullanılacaktır.
+                </small>
+
+            </div>
+
+        </div>
+
+
+
+        <div class="section-heading" id="kategoriler">
+
+            <span class="section-kicker">
+                KEŞFET
+            </span>
+
+            <h2>
+                Sana uygun oyunu seç
+            </h2>
+
+            <p>
+                Klasik masa oyunlarından hızlı arcade oyunlarına
+                kadar bütün oyunlar burada.
+            </p>
+
+        </div>
+
+
+
+        <!-- FİLTRELER -->
+
+        <div class="filters">
+
+            <button
+                type="button"
+                class="game-filter active"
+                data-filter="all">
+                Tümü
+            </button>
+
+            <button
+                type="button"
+                class="game-filter"
+                data-filter="board">
+                🎲 Masa
+            </button>
+
+            <button
+                type="button"
+                class="game-filter"
+                data-filter="cards">
+                🃏 Kart
+            </button>
+
+            <button
+                type="button"
+                class="game-filter"
+                data-filter="sport">
+                🏀 Spor
+            </button>
+
+            <button
+                type="button"
+                class="game-filter"
+                data-filter="puzzle">
+                🧩 Zeka
+            </button>
+
+            <button
+                type="button"
+                class="game-filter"
+                data-filter="arcade">
+                🕹️ Arcade
+            </button>
+
+            <button
+                type="button"
+                class="game-filter"
+                data-filter="race">
+                🏎️ Yarış
+            </button>
+
+        </div>
+
+
+
+        <!--
+            15 OYUN BURAYA JAVASCRIPT TARAFINDAN
+            OTOMATİK OLARAK OLUŞTURULACAK.
+        -->
+
+        <div
+            id="games-container"
+            class="games-grid">
+        </div>
+
+    </div>
+
+</section>
+
+
+
+<!-- =========================================================
+     NASIL OYNANIR
+     ========================================================= -->
+
+<section id="nasil-oynanir" class="section">
+
+    <div class="container">
 
         <div class="section-heading">
 
-          <span class="section-label">🎮 OYUNLAR</span>
+            <span class="section-kicker">
+                BASİT VE HIZLI
+            </span>
 
-          <h2>Bir oyun seç ve eğlenceye başla</h2>
+            <h2>
+                Nasıl oynanır?
+            </h2>
 
-          <p>
-            İstediğin oyunu seç. Oyun doğrudan bu sayfada açılır.
-          </p>
+            <p>
+                Birkaç saniye içinde oyuna başlayabilirsin.
+            </p>
 
         </div>
 
 
-        <!-- OYUN FİLTRELERİ -->
+        <div class="steps">
 
-        <div class="game-filters">
 
-          <button class="game-filter active" data-filter="all" type="button">
-            Tümü
-          </button>
+            <div class="step">
 
-          <button class="game-filter" data-filter="board" type="button">
-            🎲 Masa
-          </button>
+                <div class="step-number">
+                    01
+                </div>
 
-          <button class="game-filter" data-filter="cards" type="button">
-            🃏 Kart
-          </button>
+                <div class="step-icon">
+                    🎮
+                </div>
 
-          <button class="game-filter" data-filter="sport" type="button">
-            ⚽ Spor
-          </button>
+                <h3>
+                    Oyunu seç
+                </h3>
 
-          <button class="game-filter" data-filter="puzzle" type="button">
-            🧩 Zeka
-          </button>
+                <p>
+                    15 oyun arasından istediğin oyunu bul
+                    ve Oyna butonuna dokun.
+                </p>
 
-          <button class="game-filter" data-filter="arcade" type="button">
-            🕹️ Arcade
-          </button>
+            </div>
 
-          <button class="game-filter" data-filter="race" type="button">
-            🏎️ Yarış
-          </button>
+
+            <div class="step">
+
+                <div class="step-number">
+                    02
+                </div>
+
+                <div class="step-icon">
+                    ⚡
+                </div>
+
+                <h3>
+                    Mücadeleye başla
+                </h3>
+
+                <p>
+                    Oyun ekranı açılır. Telefon, tablet veya
+                    bilgisayardan kontrolleri kullan.
+                </p>
+
+            </div>
+
+
+            <div class="step">
+
+                <div class="step-number">
+                    03
+                </div>
+
+                <div class="step-icon">
+                    🏆
+                </div>
+
+                <h3>
+                    Kazan ve yüksel
+                </h3>
+
+                <p>
+                    Başarılı oldukça puan, XP ve coin kazanarak
+                    seviyeni yükselt.
+                </p>
+
+            </div>
+
 
         </div>
 
+    </div>
 
-        <!-- JAVASCRIPT 15 OYUNU BURAYA GETİRECEK -->
-
-        <div id="games-container" class="games-grid"></div>
-
-      </div>
-
-    </section>
+</section>
 
 
-    <!-- =========================================================
-         NASIL ÇALIŞIR
-         ========================================================= -->
 
-    <section id="nasil-oynanir" class="info-section">
+<!-- =========================================================
+     HAKKIMIZDA
+     ========================================================= -->
 
-      <div class="container">
+<section class="section">
 
-        <div class="section-heading">
+    <div class="container">
 
-          <span class="section-label">✨ KOLAY VE HIZLI</span>
+        <div class="info-panel">
 
-          <h2>Nasıl Oynanır?</h2>
+            <h2>
+                🎮 Oyun Dünyası
+            </h2>
 
-          <p>
-            Oyunu seç, başlat ve eğlenceye katıl.
-          </p>
+            <p>
+                Oyun Dünyası, farklı türlerdeki tarayıcı oyunlarını
+                tek bir yerde buluşturmak için hazırlanan ücretsiz
+                bir oyun platformudur. Ek program yüklemeden,
+                doğrudan tarayıcından oynayabilirsin.
+            </p>
 
         </div>
 
+    </div>
 
-        <div class="steps-grid">
+</section>
 
-          <div class="step-card">
 
-            <div class="step-number">1</div>
 
-            <div class="step-icon">🎮</div>
+<!-- =========================================================
+     FOOTER
+     ========================================================= -->
 
-            <h3>Oyunu Seç</h3>
+<footer>
 
-            <p>
-              Yukarıdaki oyunlardan istediğini seç ve
-              oyun kartına tıkla.
-            </p>
+    <div class="footer-title">
+        🎮 Oyun Dünyası
+    </div>
 
-          </div>
+    <div>
+        15 ücretsiz tarayıcı oyunu
+    </div>
 
 
-          <div class="step-card">
+    <div class="footer-links">
 
-            <div class="step-number">2</div>
+        <a href="hakkimizda.html">
+            Hakkımızda
+        </a>
 
-            <div class="step-icon">▶️</div>
+        <a href="gizlilik.html">
+            Gizlilik Politikası
+        </a>
 
-            <h3>Oyunu Başlat</h3>
+        <a href="kullanim-sartlari.html">
+            Kullanım Şartları
+        </a>
 
-            <p>
-              Açılan oyun ekranından oyunu başlat ve
-              kontrolleri kullan.
-            </p>
+        <a href="iletisim.html">
+            İletişim
+        </a>
 
-          </div>
+    </div>
 
 
-          <div class="step-card">
+    <div class="footer-copy">
+        © 2026 Oyun Dünyası — Tüm hakları saklıdır.
+    </div>
 
-            <div class="step-number">3</div>
+</footer>
 
-            <div class="step-icon">🏆</div>
 
-            <h3>Kazan ve İlerle</h3>
 
-            <p>
-              Oyun oynadıkça puan, XP ve sanal coin
-              kazanarak seviyeni yükselt.
-            </p>
+<!-- =========================================================
+     OYUN MODALI
+     ========================================================= -->
 
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =========================================================
-         ÖDÜL
-         ========================================================= -->
-
-    <section class="reward-section">
-
-      <div class="container">
-
-        <div class="reward-card">
-
-          <div class="reward-icon">🎁</div>
-
-          <div class="reward-content">
-
-            <span class="section-label">ÖDÜL</span>
-
-            <h2>Reklam İzleyerek Ödül Kazan</h2>
-
-            <p>
-              Ödüllü reklam sistemi hazır olduğunda,
-              reklam izleyerek oyun içi sanal ödül
-              kazanabileceksin.
-            </p>
-
-          </div>
-
-          <button
-            id="watch-ad-btn"
-            class="btn btn-primary"
-            type="button">
-            📺 Reklam İzle
-          </button>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =========================================================
-         HAKKIMIZDA
-         ========================================================= -->
-
-    <section id="hakkimizda" class="info-section about-section">
-
-      <div class="container">
-
-        <div class="section-heading">
-
-          <span class="section-label">ℹ️ HAKKIMIZDA</span>
-
-          <h2>Oyun Dünyası</h2>
-
-          <p>
-            Oyun Dünyası, farklı türlerde tarayıcı oyunlarını
-            tek bir yerde buluşturmayı amaçlayan ücretsiz bir
-            oyun platformudur.
-          </p>
-
-        </div>
-
-
-        <div class="about-grid">
-
-          <div class="about-card">
-
-            <div class="about-icon">📱</div>
-
-            <h3>Her Cihazda</h3>
-
-            <p>
-              Telefon, tablet ve bilgisayarda oynayabileceğin
-              şekilde tasarlanmıştır.
-            </p>
-
-          </div>
-
-
-          <div class="about-card">
-
-            <div class="about-icon">⚡</div>
-
-            <h3>Hızlı Başlangıç</h3>
-
-            <p>
-              Ek program yüklemeden doğrudan tarayıcı üzerinden
-              oyunlarını başlatabilirsin.
-            </p>
-
-          </div>
-
-
-          <div class="about-card">
-
-            <div class="about-icon">🎯</div>
-
-            <h3>Farklı Oyunlar</h3>
-
-            <p>
-              Masa oyunları, kart oyunları, spor, zeka ve
-              arcade oyunları tek platformda.
-            </p>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-
-    <!-- =========================================================
-         ALT BİLGİ
-         ========================================================= -->
-
-    <section class="bottom-info">
-
-      <div class="container">
-
-        <div class="bottom-info-inner">
-
-          <div>
-
-            <h3>🎮 Oyun Dünyası</h3>
-
-            <p>
-              Eğlenceye her yerden devam et.
-            </p>
-
-          </div>
-
-
-          <div class="bottom-links">
-
-            <a href="gizlilik.html">
-              Gizlilik Politikası
-            </a>
-
-            <a href="kullanim-sartlari.html">
-              Kullanım Şartları
-            </a>
-
-            <a href="iletisim.html">
-              İletişim
-            </a>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
-
-  </main>
-
-
-  <!-- =========================================================
-       OYUN PENCERESİ
-       ========================================================= -->
-
-  <div
+<div
     id="game-modal"
-    class="game-modal hidden"
+    class="hidden"
     aria-hidden="true">
 
     <div class="game-modal-content">
 
-      <div class="game-modal-header">
 
-        <div>
+        <div class="game-modal-header">
 
-          <span id="modal-category" class="modal-category">
-            OYUN
-          </span>
+            <div>
 
-          <h2 id="modal-game-title">
-            Oyun
-          </h2>
+                <span
+                    id="modal-category"
+                    class="modal-category">
+                    OYUN
+                </span>
+
+                <h2 id="modal-game-title">
+                    Oyun
+                </h2>
+
+            </div>
+
+
+            <button
+                id="close-modal-btn"
+                class="close-modal-btn"
+                type="button"
+                aria-label="Oyunu kapat">
+                ✕
+            </button>
 
         </div>
 
 
-        <button
-          id="close-modal-btn"
-          class="close-modal-btn"
-          type="button"
-          aria-label="Oyunu kapat">
-          ✕
-        </button>
-
-      </div>
-
-
-      <div id="game-area" class="game-area"></div>
+        <div
+            id="game-area"
+            class="game-area">
+        </div>
 
     </div>
 
-  </div>
+</div>
 
 
-  <!-- =========================================================
-       BİLDİRİM PENCERESİ
-       ========================================================= -->
 
-  <div
+<!-- =========================================================
+     BİLDİRİM MODALI
+     ========================================================= -->
+
+<div
     id="message-modal"
-    class="message-modal hidden"
+    class="hidden"
     aria-hidden="true">
 
     <div class="message-modal-content">
 
-      <div id="message-icon" class="message-icon">
-        🎉
-      </div>
+        <div
+            id="message-icon"
+            class="message-icon">
+            🎉
+        </div>
 
-      <h2 id="message-title">
-        Tebrikler!
-      </h2>
+        <h2 id="message-title">
+            Tebrikler!
+        </h2>
 
-      <p id="message-text">
-        Oyun tamamlandı.
-      </p>
+        <p id="message-text">
+            Oyun tamamlandı.
+        </p>
 
-      <button
-        id="message-close"
-        class="btn btn-primary"
-        type="button">
-        Tamam
-      </button>
+        <button
+            id="message-close"
+            type="button">
+            Tamam
+        </button>
 
     </div>
 
-  </div>
+</div>
 
 
-  <!-- =========================================================
-       FOOTER
-       ========================================================= -->
 
-  <footer class="site-footer">
+<!-- =========================================================
+     JAVASCRIPT
+     ========================================================= -->
 
-    <div class="container">
-
-      <div class="footer-inner">
-
-        <div class="footer-brand">
-
-          <strong>🎮 Oyun Dünyası</strong>
-
-          <span>
-            15 ücretsiz tarayıcı oyunu
-          </span>
-
-        </div>
-
-
-        <div class="footer-links">
-
-          <a href="gizlilik.html">
-            Gizlilik
-          </a>
-
-          <a href="kullanim-sartlari.html">
-            Kullanım Şartları
-          </a>
-
-          <a href="iletisim.html">
-            İletişim
-          </a>
-
-        </div>
-
-      </div>
-
-
-      <div class="footer-copy">
-        © 2026 Oyun Dünyası. Tüm hakları saklıdır.
-      </div>
-
-    </div>
-
-  </footer>
-
-
-  <!-- =========================================================
-       JAVASCRIPT
-       ========================================================= -->
-
-  <script src="script.js"></script>
+<script src="script.js"></script>
 
 </body>
 </html>
